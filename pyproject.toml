@@ -1,0 +1,86 @@
+[tool.poetry]
+name = "shoong-shoong-marble"
+version = "0.1.0"
+description = ""
+authors = ["cafitac <cafitac99@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+black = "^25.1.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py312"
+lint.select = ["ALL"]
+lint.ignore = [
+    # TODO: Python 및 의존 패키지 버전 한계로 인한 임시 예외 규칙
+    "UP006", # (non-pep585-annotation) Pydantic과 같은 런타임 타입을 활용하는 라이브러리를 위해 임시 비활성화
+    "UP007", # (non-pep604-annotation) Pydantic과 같은 런타임 타입을 활용하는 라이브러리를 위해 임시 비활성화
+    # TODO: Django 버전 업그레이드 관련, 선행되어야 할 리팩토링이 많아 임시 보류
+    "DJ001", # (django-nullable-model-string-field) 많은 불필요 마이그레이션 생성될 수 있어서 버전 업그레이드와 함께 처리
+    "DJ007", # (django-all-with-model-form) 대부분 레거시
+    "DJ008", # (django-model-without-dunder-str) 레거시, 영향 및 중요도 낮음
+    "DTZ", # (flake8-datetimez) 기능 영향 줄 가능성이 높고 레거시 많아서 보류
+    "PERF", # (Perflint) 중요도 낮음
+    # TODO: 타입 체크 관련 임시 보류 규칙들
+    "RUF012", # (mutable-class-default) 중요도 낮음
+    # TODO: 로깅 개선을 위한 규칙들
+    "G004", # (logging-f-string) 중요도 낮음, 레거시 많아서 보류
+    "TRY401", # (verbose-log-message) 중요도 낮음
+    # TODO: 예외 처리 및 구조 리팩토링 시 활성화할 규칙
+    "BLE001", # (blind-except) 높은 중요도, 다만 전체적인 예외 처리 구조 변경 필요 및 기능 영향 감안하여 보류
+    "EM", # (flake8-errmsg) 중요도 낮음, 레거시 많아서 일시 보류
+    "TRY002", # (raise-vanilla-class) 예외 구조화 필요
+    "TRY003", # (raise-vanilla-args) 중요도 낮음
+    "TRY301", # (raise-within-try) 중요도 낮은 리팩토링 작업
+    "TRY400", # (error-instead-of-exception) 중요도는 높으나 기능상 영향은 없고 그 수가 많아서 보류
+    "PLE0704",
+    # TODO: 그룹화하기 애매한 리팩토링하면 좋을 규칙들
+    "C901", # (complex-structure) 작업량이 큰 리팩토링
+    "D417", # (undocumented-param) 레거시 코드가 많아서 무의미한 소모성 작업 반복될 것 같아 임시 보류함
+    "INT001", # (f-string-in-get-text-func-call) I18n 및 I10n, 중요도 낮고 필요성도 아직은 낮음, 다만 구성되어 있으면 분명 유용할 것
+    "PLR0912", # (too-many-branches) 작업량이 큰 리팩토링 작업들이라 일시 보류
+    "PLR2004", # (magic-value-comparison) 중요도 낮음
+    "PLC0206",
+    # TODO: TODO 일시적으로 허용, 추후 모두 삭제해야 함
+    "TD",
+    "FIX",
+    # 전역 활성 예외 규칙
+    "TC",
+    "PLC2401",
+    "PLC2403",
+    "ANN401", # (any-type) `Any` 타입 금지, 추후에는 다시 활성화하는 편이 좋음
+    "COM812", # (missing-trailing-comma) `ruff format` 실행 시 충돌로 일시적으로 무시, 활성화하는 편이 좋음
+    "D100", # (undocumented-public-module) 모듈 수준 문서화를 강제하는 것은 이 프로젝트 성격에 맞지 않음, 라이브러리에 더 적합할 것으로 판단
+    "D101", # (undocumented-public-class) 복잡한 메타프로그래밍 기법을 이용하고 있지는 않아 클래스 수준의 문서는 강제하지 않습니다.
+    "D104", # (undocumented-public-package) D100과 같은 사유
+    "D105", # (undocumented-magic-method) 일부 매직 메소드를 제외하면 대부분 매직 메소드는 통용되는 자명한 역할과 호출 시그니처가 있으므로 항상 명시할 필요는 없음
+    "D106", # (undocumented-public-nested-class) Django 프레임워크 관련 생태계에 메타데이터를 위해 중첩 클래스를 이용함
+    "D203", # (one-blank-line-before-class) Google 컨벤션에서 기본 무시됨, 없어도 무관
+    "D213", # (multi-line-summary-second-line) Google 컨벤션에서 기본 무시됨, 없어도 무관
+    "D400", # (ends-in-period) 주석 작성을 조금 유연하게 허용
+    "D401", # (non-imperative-mood) 한글로 주석을 작성할 것이라 프로젝트에 맞지 않음
+    "D402", # (no-signature) 주석 작성을 조금 유연하게 허용
+    "D415", # (ends-in-punctuation) 주석 작성을 조금 유연하게 허용
+    "ISC001", # (single-line-implicit-string-concatenation) `ruff format` 실행 시 충돌로 일시적으로 무시, 활성화하는 편이 좋음
+    "RUF001", # (ambiguous-unicode-character-string) 비슷한 문자이지만 다른 유니코드인 경우, IDE 에서 탐지가 되지 않아 noqa 처리가 불가능
+]
+line-length = 120
+
+[tool.ruff.lint.extend-per-file-ignores]
+"**/__init__.py" = [
+    "F401", # (unused-import) Re-export가 많은 `__init__.py` 파일은 미사용 임포트 허용
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", ]
+
+[tool.ruff.lint.pylint]
+max-args = 8 # (PLR0913, too-many-arguments) 기본값인 5는 현실적으로 다소 빡빡하다고 판단되서 8로 증가
+
+
