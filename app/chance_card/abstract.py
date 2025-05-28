@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 
-class ChangeCard(ABC):
+class ChanceCard(ABC):
 
     @abstractmethod
     def use(self) -> Any:

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 
 from app.player.impl import Player
 
@@ -18,14 +18,10 @@ class SpaceColor(Enum):
 
 
 class BoardSpace(ABC):
-    _seq: int
-    _color: SpaceColor = SpaceColor.NONE
-    _landed_players: list[Player] = []
-
     def __init__(self, seq: int, color: Optional[SpaceColor] = None):
-        self._seq = seq
-        if color is not None:
-            self._color = color
+        self._seq: int = seq
+        self._color: SpaceColor = color if color is not None else SpaceColor.NONE
+        self._landed_players: List[Player] = []
 
     @abstractmethod
     def on_land(self, player: Player):

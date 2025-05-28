@@ -1,9 +1,5 @@
-from app.dice.dices import Dices
-
-
 def main():
-    dices: Dices = Dices(count=2)
-    print(dices.roll())
+    pass
 
 
 if __name__ == '__main__':
