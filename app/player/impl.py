@@ -11,6 +11,7 @@ class Player:
     _cash: Money = Money.zero()
     _turns_to_wait: int = 0
     _chance_card: Optional[ChanceCard] = None
+    _on_island: bool = False
 
     def __init__(self, idx: int, name: str) -> None:
         self._idx = idx
@@ -39,3 +40,14 @@ class Player:
 
     def next_turn(self) -> None:
         self._turns_to_wait -= 1
+
+    def go_to_island(self, turns: int = 3):
+        self._on_island = True
+        self._turns_to_wait = turns
+
+    def leave_island(self):
+        self._on_island = False
+        self._turns_to_wait = 0
+
+    def is_on_island(self) -> bool:
+        return self._on_island
