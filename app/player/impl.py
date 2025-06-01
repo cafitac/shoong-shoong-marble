@@ -13,9 +13,10 @@ class Player:
     _chance_card: Optional[ChanceCard] = None
     _on_island: bool = False
 
-    def __init__(self, idx: int, name: str) -> None:
+    def __init__(self, idx: int, name: str, color=(255, 255, 255)) -> None:
         self._idx = idx
         self._name = name
+        self.color = color
 
     def __str__(self) -> str:
         return f"{self._idx}번 플레이어({self._name})"

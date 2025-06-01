@@ -154,6 +154,16 @@ class PlayerSetupUI:
             self.screen.blit(label, (UIConfig.LABEL_X, UIConfig.LABEL_Y_START + i * UIConfig.LABEL_Y_SPACING))
             field.draw(self.screen)
 
+            # 색상 표시 상자
+            color_box_rect = pygame.Rect(
+                UIConfig.INPUT_FIELD_START_X + UIConfig.INPUT_FIELD_WIDTH + 20,  # 입력 필드 오른쪽에 20픽셀 간격
+                UIConfig.INPUT_FIELD_START_Y + i * UIConfig.INPUT_FIELD_SPACING,
+                30,  # 색상 상자 너비
+                30  # 색상 상자 높이
+            )
+            pygame.draw.rect(self.screen, PLAYER_COLORS[i], color_box_rect)
+            pygame.draw.rect(self.screen, UIConfig.BLACK_COLOR, color_box_rect, 2)  # 테두리
+
         self.start_button.draw(self.screen)
 
     def create_game(self):
@@ -163,7 +173,8 @@ class PlayerSetupUI:
         players = []
         for i, field in enumerate(self.input_fields):
             name = field.text.strip() or f"플레이어{i + 1}"
-            players.append(Player(i, name))
+            color = PLAYER_COLORS[i]
+            players.append(Player(i, name, color))
         return Game(players)
 
 

@@ -26,7 +26,6 @@ ref_player_info_font_size = 20
 ref_player_rank_font_size = 26
 ref_corner_font_size = 28  # 코너 블록의 폰트 크기
 
-
 sample_texts_pg = {"level": "{건물레벨}", "name": "{건물이름}", "price": "{가격}"}
 
 # 보드 전체 크기 계산
@@ -61,4 +60,12 @@ CORNER_POSITIONS = [
     (BOARD_EDGES['right'] - CORNER_SIDE / 2, BOARD_EDGES['bottom'] - CORNER_SIDE / 2),  # 우하단
     (BOARD_EDGES['left'] + CORNER_SIDE / 2, BOARD_EDGES['top'] + CORNER_SIDE / 2),  # 좌상단
     (BOARD_EDGES['right'] - CORNER_SIDE / 2, BOARD_EDGES['top'] + CORNER_SIDE / 2)  # 우상단
+]
+
+# 플레이어 색상
+PLAYER_COLORS = [
+    (255, 182, 182),  # 연한 빨강
+    (182, 182, 255),  # 연한 파랑
+    (182, 255, 182),  # 연한 초록
+    (255, 255, 182),  # 연한 노랑
 ]
