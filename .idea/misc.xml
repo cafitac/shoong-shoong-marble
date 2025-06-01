@@ -4,4 +4,5 @@
     <option name="pathToExecutable" value="/usr/local/bin/black" />
     <option name="sdkName" value="Poetry (shoong_shoong_marble)" />
   </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12 virtualenv at ~/Project/school/컴사코기_/shoong_shoong_marble/mygame_env" project-jdk-type="Python SDK" />
 </project>
