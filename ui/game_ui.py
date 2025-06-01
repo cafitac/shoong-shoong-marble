@@ -1,0 +1,93 @@
+# game_ui.py
+import pygame
+import math
+from constants import *
+from board_renderer import BoardRenderer
+from player_panel import PlayerPanel
+
+
+class GameUI:
+
+    def __init__(self):
+        pygame.init()
+        self.screen = None
+        self.clock = pygame.time.Clock()
+        self.running = True
+        self.fonts = self._init_fonts()
+        self._init_screen()
+        self.board_renderer = self._init_board_renderer()
+
+        # PlayerPanel 색상 설정
+        self.player_panel_colors = {
+            'background': COLOR_PLAYER_PANEL_BG,
+            'rank_badge': COLOR_PLAYER_RANK_BG,
+            'text': COLOR_WHITE
+        }
+
+        self.player_panel = PlayerPanel(self.fonts, self.player_panel_colors)
+
+    def _init_fonts(self):
+        try:
+            fonts = {
+                'main': pygame.font.Font(FONT_PATH_BOLD, ref_main_font_size),
+                'price': pygame.font.Font(FONT_PATH_REGULAR, ref_price_font_size),
+                'player_name': pygame.font.Font(FONT_PATH_BOLD, ref_player_name_font_size),
+                'player_info': pygame.font.Font(FONT_PATH_REGULAR, ref_player_info_font_size),
+                'player_rank': pygame.font.Font(FONT_PATH_BOLD, ref_player_rank_font_size),
+                'corner': pygame.font.Font(FONT_PATH_BOLD, ref_corner_font_size)  # 코너 블록용 폰트 추가
+            }
+        except pygame.error as e:
+            print(f"나눔고딕 폰트 파일을 로드할 수 없습니다: {e}. 기본 시스템 폰트를 사용합니다.")
+            fonts = {
+                'main': pygame.font.SysFont("Arial", ref_main_font_size),
+                'price': pygame.font.SysFont("Arial", ref_price_font_size),
+                'player_name': pygame.font.SysFont("Arial", ref_player_name_font_size, bold=True),
+                'player_info': pygame.font.SysFont("Arial", ref_player_info_font_size),
+                'player_rank': pygame.font.SysFont("Arial", ref_player_rank_font_size, bold=True),
+                'corner': pygame.font.SysFont("Arial", ref_corner_font_size, bold=True)  # 코너 블록용 폰트 추가
+            }
+        return fonts
+
+    def _init_screen(self):
+        try:
+            screen_info = pygame.display.Info()
+            screen_width = screen_info.current_w
+            screen_height = screen_info.current_h
+            screen_flags = pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF
+            self.screen = pygame.display.set_mode((screen_width, screen_height), screen_flags)
+        except Exception as e:
+            print(f"전체 화면 설정 실패: {e}. 기본 크기(1280x800)로 설정합니다.")
+            self.screen = pygame.display.set_mode((1280, 800), pygame.RESIZABLE)
+        pygame.display.set_caption("슝슝마블 Pygame (보드 크기 최대화)")
+
+    def _init_board_renderer(self):
+        board_surface = pygame.Surface((BOARD_CONTENT_WIDTH, BOARD_CONTENT_HEIGHT), pygame.SRCALPHA)
+        board_surface.fill(COLOR_BOARD_BG_UNROTATED)
+        return BoardRenderer(board_surface, self.fonts, colors=BLOCK_COLORS)
+
+    def _handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            elif event.type == pygame.VIDEORESIZE:
+                self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+
+    def run(self, game):
+        while self.running:
+            self._handle_events()
+            self.screen.fill(COLOR_SCREEN_BG)
+
+            current_w, current_h = self.screen.get_size()
+            self.board_renderer.draw_board(self.screen, current_w / 2, current_h / 2)
+
+            # 플레이어 패널 그리기
+            player_positions = self.player_panel.calculate_positions(current_w, current_h)
+            for i, player in enumerate(game.get_players()):
+                rank = i + 1
+                if rank in player_positions:
+                    self.player_panel.draw(self.screen, player, rank, player_positions[rank])
+
+            pygame.display.flip()
+            self.clock.tick(60)
+
+        pygame.quit()
