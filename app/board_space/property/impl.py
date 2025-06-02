@@ -45,6 +45,9 @@ class PropertySpace(BoardSpace):
         self._building = Building()
         self._building.set_price(price)
 
+        # 이벤트 카드 상태
+        self._is_festival= False # 축제 여부
+
     def on_land(self, player: Player):
         price = self._building.get_price()
         if self._owner is None:
@@ -93,3 +96,6 @@ class PropertySpace(BoardSpace):
         else:
             print(f"{self._name}은 {self._owner}님의 소유입니다.")
 
+    # 이벤트 카드 관련 함수
+    def set_festival(self, is_festival):
+        self._is_festival = is_festival
