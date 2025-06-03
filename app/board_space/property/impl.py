@@ -44,6 +44,7 @@ class PropertySpace(BoardSpace):
         self._owner: Optional[Player] = None
         self._building = Building()
         self._building.set_price(price)
+        self.olympic = False
 
     def on_land(self, player: Player):
         price = self._building.get_price()
