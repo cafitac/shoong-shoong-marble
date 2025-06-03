@@ -33,6 +33,8 @@ class UIConfig:
     LABEL_X = 200
     LABEL_Y_START = 215
     LABEL_Y_SPACING = 100
+    LABEL_X_DICE = 550
+    LABEL_Y_DICE = 500
 
     # UI 요소 위치
     TITLE_POS = (460, 100)
@@ -41,3 +43,4 @@ class UIConfig:
     # 버튼 위치와 크기
     BACK_BUTTON_RECT = (50, 50, 100, 50)
     START_BUTTON_RECT = (440, 650, 200, 50)
+    DICE_BUTTON_RECT = (500, 550, 150, 50)
