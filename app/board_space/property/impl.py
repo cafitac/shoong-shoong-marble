@@ -5,18 +5,10 @@ from app.board_space.abstract import BoardSpace, SpaceColor
 from app.player.impl import Player
 from app.money.impl import Money
 
+
 class Building:
     def __init__(self, base_price: Money):
         self._level = 0
-        self._base_price = base_price
-
-    def get_price(self) -> Money:
-        return self._base_price
-
-    def get_upgrade_cost(self) -> Money:
-        return self._base_price / 2
-
-    def set_price(self, base_price: Money):
         self._base_price = base_price
 
     def get_price(self) -> Money:
@@ -45,12 +37,28 @@ class Building:
         return self._base_price * (0.2 + 0.2 * self._level)
 
 
+class AttackEffectType(Enum):
+    NONE = 0
+    YELLOW_DUST = 1
+    INFECTIOUS_DISEASE = 2
+    ALIEN_INVASION = 3
+    BLACK_OUT = 4
+
+
 class PropertySpace(BoardSpace):
     def __init__(self, seq: int, name: str, price: Money, color: Optional[SpaceColor] = None):
         super().__init__(seq, color)
         self._name = name
         self._owner: Optional[Player] = None
         self._building = Building(price)
+
+        # 공격 카드 상태
+        self._attack_effect_type = AttackEffectType.NONE
+        self._attack_effect_value: float = 1.0
+        self._attack_effect_duration: int = 0
+
+        # 이벤트 카드 상태
+        self._is_festival = False
 
     def on_land(self, player: Player):
         if self._owner is None:
@@ -121,101 +129,6 @@ class PropertySpace(BoardSpace):
         else:
             print("인수 비용이 부족합니다.")
 
-    def get_owner(self) -> Optional[Player]:
-        return self._owner
-
-
-# 건물 가격 정보 연동 로직
-def load_property_data(file_path: str):
-    properties = []
-    with open(file_path, encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            seq = int(row['번호'])
-            name = row['건물명']
-            price = Money(int(row['가격(만원)']))
-            property_space = PropertySpace(seq, name, price)
-            properties.append(property_space)
-    return properties
-
-class AttackEffectType(Enum):
-    NONE = 0
-    YELLOW_DUST = 1
-    INFECTIOUS_DISEASE = 2
-    ALIEN_INVASION = 3
-    BLACK_OUT = 4
-
-
-class PropertySpace(BoardSpace):
-    def __init__(
-        self,
-        seq: int,
-        name: str,
-        price: Money,
-        color: Optional[SpaceColor] = None
-    ):
-        super().__init__(seq, color)
-        self._name = name
-        self._owner: Optional[Player] = None
-        self._building = Building()
-        self._building.set_price(price)
-
-        # 공격 카드 상태
-        self._attack_effect_type = AttackEffectType.NONE
-        self._attack_effect_value: float = 1.0
-        self._attack_effect_duration: int = 0
-
-        # 이벤트 카드 상태
-        self._is_festival= False # 축제 여부
-
-    def on_land(self, player: Player):
-        price = self._building.get_price()
-        if self._owner is None:
-            if player.get_cash() >= price:
-                player.spend(price)
-                self._owner = player
-                self._building.upgrade()
-                print(f"{player}님이 {self._name}에 별장을 건설했습니다!")
-            else:
-                print(f"{player}님은 돈이 부족하여 {self._name}을 구매할 수 없습니다.")
-
-        elif self._owner == player:
-            cost = self._building.get_upgrade_cost()
-            level = self._building.get_level()
-
-            if level == 1:
-                if player.get_cash() >= cost:
-                    player.spend(cost)
-                    self._building.upgrade()
-                    print(f"{player}님이 {self._name}에 빌딩을 건설했습니다!")
-                else:
-                    print("빌딩 건설 비용이 부족합니다.")
-
-            elif level == 2:
-                if player.get_cash() >= cost:
-                    player.spend(cost)
-                    self._building.upgrade()
-                    print(f"{player}님이 {self._name}에 호텔을 건설했습니다!")
-                else:
-                    print("호텔 건설 비용이 부족합니다.")
-
-            elif level == 3:
-                if self._building.can_build_landmark():
-                    if player.get_cash() >= cost:
-                        player.spend(cost)
-                        self._building.upgrade()
-                        print(f"{player}님이 {self._name}에 랜드마크를 건설했습니다!")
-                    else:
-                        print("랜드마크 건설 비용이 부족합니다.")
-                else:
-                    print("조건을 만족하지 않아 랜드마크를 건설할 수 없습니다.")
-
-            elif self._building.is_maxed():
-                print(f"{self._name}은 이미 랜드마크까지 건설된 상태입니다!")
-
-        else:
-            print(f"{self._name}은 {self._owner}님의 소유입니다.")
-
     # 공격 카드 관련 함수
     def set_attack_effect(self, type: AttackEffectType, duration: int, value: float):
         self._attack_effect_type = type
@@ -233,12 +146,9 @@ class PropertySpace(BoardSpace):
         self._attack_effect_value = 1.0
         self._attack_effect_duration = 0
 
-
-    # 이벤트 카드 관련 함수
     def set_festival(self, is_festival):
         self._is_festival = is_festival
 
-    # get
     def get_owner(self) -> Optional[Player]:
         return self._owner
 
@@ -247,3 +157,17 @@ class PropertySpace(BoardSpace):
 
     def get_color(self) -> SpaceColor:
         return self._color
+
+
+# 건물 가격 정보 연동 로직
+def load_property_data(file_path: str):
+    properties = []
+    with open(file_path, encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            seq = int(row['번호'])
+            name = row['건물명']
+            price = Money(int(row['가격(만원)']))
+            property_space = PropertySpace(seq, name, price)
+            properties.append(property_space)
+    return properties
