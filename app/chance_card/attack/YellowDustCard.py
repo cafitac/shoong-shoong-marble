@@ -1,13 +1,17 @@
-from app.chance_card.abstract import ChanceCard
+from app.chance_card.abstract import ChanceCard, ChanceCardType
+from app.board_space.property.impl import AttackEffectType
+from app.game.impl import Game
 
 # 황사
 # 지정 도시 통행료 ½로 하락
 class YellowDustCard(ChanceCard):
-    def __init__(self, target_city_id: str):
-        self.name = "황사"
-        self.description = "지정 도시 통행료 1/2로 하락"
-        self.target_city_id = target_city_id
+    def __init__(self, duration: int = 3):
+        super().__init__(ChanceCardType.INSTANT, "황사", "지정 도시 통행료 1/2로 하락")
+        self.duration = duration
+        self.value = 0.5
 
-    def use(self):
-        # 통행료 1/2
-        return True
+    def use(self, game: Game):
+        target_city = game.get_board().get_city(1) # 지정 도시
+        target_city.set_attack_effect(AttackEffectType.YELLOW_DUST, self.duration, self.value)  # 황사 상태 설정
+
+        print(f"{target_city._name} : 황사")

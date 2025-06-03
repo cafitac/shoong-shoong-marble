@@ -1,6 +1,6 @@
 from typing import Optional
 
-from app.chance_card.abstract import ChanceCard
+#from app.chance_card.abstract import ChanceCard
 from app.money.impl import Money
 
 
@@ -10,7 +10,7 @@ class Player:
     _asset: Money = Money.zero()
     _cash: Money = Money.zero()
     _turns_to_wait: int = 0
-    _chance_card: Optional[ChanceCard] = None
+    #_chance_card: Optional[ChanceCard] = None
     _on_island: bool = False
 
     def __init__(self, idx: int, name: str) -> None:
