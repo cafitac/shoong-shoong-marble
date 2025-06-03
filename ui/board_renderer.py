@@ -4,7 +4,7 @@ from typing import Dict, List
 from app.player.impl import Player
 from app.board_space.abstract import BoardSpace
 from ui.board_block import BoardBlock
-from ui.corner_block import CornerBlock, CornerType
+from ui.corner_block import CornerBlock
 from ui.constants import (
     BOARD_CELLS_PER_SIDE,
     CELL_LONG,
@@ -30,23 +30,81 @@ class BoardRenderer:
         self._init_blocks()
         self._draw_initial_board()
 
-
+    # BoardRenderer의 _init_blocks 메서드 수정 제안
     def _init_blocks(self):
-        # 각 코너 블록을 개별적으로 초기화
-        self.corner_blocks = [
-            CornerBlock(CORNER_SIDE, COLOR_CORNER_FILL, COLOR_BLACK, CornerType.START, font=self.fonts['corner']),
-            CornerBlock(CORNER_SIDE, COLOR_CORNER_FILL, COLOR_BLACK, CornerType.TRAVEL, font=self.fonts['corner']),
-            CornerBlock(CORNER_SIDE, COLOR_CORNER_FILL, COLOR_BLACK, CornerType.ISLAND, font=self.fonts['corner']),
-            CornerBlock(CORNER_SIDE, COLOR_CORNER_FILL, COLOR_BLACK, CornerType.FESTIVAL, font=self.fonts['corner'])
+        # 실제 코너 공간의 seq 값이라고 가정합니다.
+        # 이 값들은 board_space_data.csv 또는 관련 설정에서 확인해야 합니다.
+        corner_seq_map = {
+            "START": 0,
+            "ISLAND": 8,
+            "FESTIVAL": 16,
+            "TRAVEL": 24,
+        }
+
+        # seq를 키로 하는 딕셔너리를 만들어 검색을 용이하게 합니다.
+        spaces_by_seq = {space.get_seq(): space for space in self.board_spaces}
+
+        corner_spaces = []
+        # 정의된 seq 값으로 코너 공간을 찾습니다.
+        # 순서를 유지하기 위해 원래 주석에 있던 순서대로 추가합니다.
+        start_space = spaces_by_seq.get(corner_seq_map["START"])
+        travel_space = spaces_by_seq.get(corner_seq_map["TRAVEL"])  # 주석 순서: TRAVEL이 두 번째 코너
+        island_space = spaces_by_seq.get(corner_seq_map["ISLAND"])  # 주석 순서: ISLAND가 세 번째 코너
+        festival_space = spaces_by_seq.get(corner_seq_map["FESTIVAL"])  # 주석 순서: FESTIVAL이 네 번째 코너
+
+        # 찾은 공간들을 corner_spaces 리스트에 추가 (None이 아닌 경우)
+        # 원래 코드의 corner_spaces 순서를 유지하기 위해 이렇게 구성
+        # self.board_spaces[0], self.board_spaces[24], self.board_spaces[8], self.board_spaces[16]
+        # 이 순서에 맞춰 추가합니다.
+        if start_space: corner_spaces.append(start_space)
+        # 다음 코너는 원래 코드에서 self.board_spaces[24] (TRAVEL)로 되어 있었으므로, travel_space를 두 번째로 넣어야 하지만
+        # 실제 코너 블록을 그리는 순서(CORNER_POSITIONS)와 매칭되려면 START, ISLAND, FESTIVAL, TRAVEL 순이 맞을 수 있습니다.
+        # 여기서는 원래 코드의 인덱스 순서대로 매칭되는 seq를 가정하여 추가합니다.
+        # 하지만, 이 부분은 CORNER_POSITIONS와 실제 코너 매핑을 다시 확인해야 할 수 있습니다.
+        # 현재는 원본 코드의 인덱스 순서에 해당하는 seq 값의 공간을 넣는다고 가정합니다.
+        # (0 -> START, 24 -> TRAVEL, 8 -> ISLAND, 16 -> FESTIVAL)
+
+        # 원래 코드의 corner_spaces 생성 순서에 맞춰 구성
+        # self.board_spaces[0] -> START
+        # self.board_spaces[24] -> TRAVEL
+        # self.board_spaces[8] -> ISLAND
+        # self.board_spaces[16] -> FESTIVAL
+
+        _corner_space_candidates_in_original_order = [
+            spaces_by_seq.get(corner_seq_map["START"]),  # 원래 인덱스 0
+            spaces_by_seq.get(corner_seq_map["TRAVEL"]),  # 원래 인덱스 24
+            spaces_by_seq.get(corner_seq_map["ISLAND"]),  # 원래 인덱스 8
+            spaces_by_seq.get(corner_seq_map["FESTIVAL"])  # 원래 인덱스 16
         ]
 
-        # BoardBlock 초기화 시 보드 공간 정보 전달
-        self.main_block = BoardBlock(
-            CELL_SHORT, CELL_LONG,
-            self.board_spaces,  # board_spaces 리스트 전달
-            self.colors,
-            {'main': self.fonts['main'], 'price': self.fonts['price']}
-        )
+        corner_spaces = [cs for cs in _corner_space_candidates_in_original_order if cs is not None]
+
+        # 코너 블록 초기화
+        self.corner_blocks = [
+            CornerBlock(
+                CORNER_SIDE,
+                COLOR_CORNER_FILL,
+                COLOR_BLACK,
+                space,
+                font=self.fonts['corner']
+            ) for space in corner_spaces
+        ]
+
+        # 일반 블록 초기화 - seq 순서대로 정렬
+        # non_corner_spaces를 만들 때, corner_spaces에 실제 객체가 들어있으므로 set으로 만들어 검색 속도 향상
+        corner_space_set = set(corner_spaces)
+        non_corner_spaces = [space for space in self.board_spaces if space not in corner_space_set]
+        non_corner_spaces.sort(key=lambda x: x.get_seq())
+
+        self.board_blocks = [
+            BoardBlock(
+                CELL_SHORT,
+                CELL_LONG,
+                space,
+                self.colors,
+                {'main': self.fonts['main'], 'price': self.fonts['price']}
+            ) for space in non_corner_spaces
+        ]
 
     def _draw_initial_board(self):
         # 코너 블록 그리기
@@ -127,36 +185,51 @@ class BoardRenderer:
 
     def _draw_horizontal_blocks(self):
         # 아래쪽 블록 그리기
+        block_index = 0  # 첫 번째 일반 블록(self.board_blocks[0])부터 시작하도록 0으로 변경
         current_x = BOARD_EDGES['left'] + CORNER_SIDE
         center_y = BOARD_EDGES['bottom'] - CELL_LONG / 2
+
         for _ in range(BOARD_CELLS_PER_SIDE):
-            center_x = current_x + CELL_SHORT / 2
-            self.main_block.draw(self.board_surface, center_x, center_y, 0)
+            if block_index < len(self.board_blocks):
+                center_x = current_x + CELL_SHORT / 2
+                self.board_blocks[block_index].draw(self.board_surface, center_x, center_y, 0)
+                block_index += 1
             current_x += CELL_SHORT
 
         # 위쪽 블록 그리기
-        current_x = BOARD_EDGES['left'] + CORNER_SIDE
+        current_x = BOARD_EDGES['right'] - CORNER_SIDE
         center_y = BOARD_EDGES['top'] + CELL_LONG / 2
+
         for _ in range(BOARD_CELLS_PER_SIDE):
-            center_x = current_x + CELL_SHORT / 2
-            self.main_block.draw(self.board_surface, center_x, center_y, 0)
-            current_x += CELL_SHORT
+            if block_index < len(self.board_blocks):
+                center_x = current_x - CELL_SHORT / 2
+                self.board_blocks[block_index].draw(self.board_surface, center_x, center_y, 0)
+                block_index += 1
+            current_x -= CELL_SHORT
 
     def _draw_vertical_blocks(self):
+        block_index = BOARD_CELLS_PER_SIDE * 2  # 수평 블록들 이후부터
+
         # 왼쪽 블록 그리기
         current_y = BOARD_EDGES['bottom'] - CORNER_SIDE
         center_x = BOARD_EDGES['left'] + CELL_LONG / 2
+
         for _ in range(BOARD_CELLS_PER_SIDE):
-            center_y = current_y - CELL_SHORT / 2
-            self.main_block.draw(self.board_surface, center_x, center_y, 90)
+            if block_index < len(self.board_blocks):
+                center_y = current_y - CELL_SHORT / 2
+                self.board_blocks[block_index].draw(self.board_surface, center_x, center_y, 90)
+                block_index += 1
             current_y -= CELL_SHORT
 
         # 오른쪽 블록 그리기
         current_y = BOARD_EDGES['top'] + CORNER_SIDE
         center_x = BOARD_EDGES['right'] - CELL_LONG / 2
+
         for _ in range(BOARD_CELLS_PER_SIDE):
-            center_y = current_y + CELL_SHORT / 2
-            self.main_block.draw(self.board_surface, center_x, center_y, 90)
+            if block_index < len(self.board_blocks):
+                center_y = current_y + CELL_SHORT / 2
+                self.board_blocks[block_index].draw(self.board_surface, center_x, center_y, 90)
+                block_index += 1
             current_y += CELL_SHORT
 
     def _calculate_scale_factor(self, screen_width, screen_height):

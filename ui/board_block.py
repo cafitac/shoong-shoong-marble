@@ -1,10 +1,13 @@
 import pygame
 import math
 
+from app.board_space.abstract import BoardSpace
+from app.board_space.property.impl import PropertySpace
+
 
 class BoardBlock:
     def __init__(self, width: float, height: float,
-                 board_spaces: list, colors: dict, fonts: dict,
+                 space: BoardSpace, colors: dict, fonts: dict,
                  upper_part_height_ratio: float = 0.75,
                  lower_part_width_factor: float = 1.0,
                  player_space_ratio_in_upper: float = 0.30):
@@ -15,20 +18,23 @@ class BoardBlock:
         self.upper_part_height_ratio = upper_part_height_ratio
         self.lower_part_width_factor = lower_part_width_factor
         self.player_space_ratio_in_upper = player_space_ratio_in_upper
+        self.space = space
+        self.texts = self._init_texts()
 
-        # texts 딕셔너리 초기화
-        self.texts = {}
+    def _init_texts(self) -> dict:
+        texts = {
+            'seq': str(self.space.get_seq()),  # seq 정보 추가
+            'name': self.space.get_name(),
+            'level': '',
+            'price': ''
+        }
 
-        # board_spaces가 있는 경우 첫 번째 공간의 정보로 texts 초기화
-        if board_spaces and len(board_spaces) > 0:
-            space = board_spaces[0]
-            if hasattr(space, 'get_name'):
-                self.texts['name'] = space.get_name()
-            if hasattr(space, 'get_level'):
-                self.texts['level'] = str(space.get_level())
-            if hasattr(space, 'get_price'):
-                self.texts['price'] = str(space.get_price())
-            # 다른 필요한 텍스트 정보들도 여기에 추가
+        if isinstance(self.space, PropertySpace):
+            building = self.space.get_building()
+            texts['level'] = str(building.get_level()) if building else ''
+            texts['price'] = str(building.get_price()) if building else ''
+
+        return texts
 
     def _rotate_point(self, px, py, cx, cy, angle_degrees):
         angle_rad = math.radians(angle_degrees)
@@ -90,28 +96,44 @@ class BoardBlock:
     def _draw_texts(self, surface, center_x, center_y, angle):
         half_h = self.height / 2
         upper_height = self.height * self.upper_part_height_ratio
-        player_space = upper_height * self.player_space_ratio_in_upper
-        text_area_height = upper_height * (1.0 - self.player_space_ratio_in_upper)
-        text_center_y = (-half_h + player_space) + (text_area_height / 2)
+        player_space_height = upper_height * self.player_space_ratio_in_upper
+        text_area_total_height = upper_height * (1.0 - self.player_space_ratio_in_upper)
+
+        # 텍스트 영역의 시작 y좌표 (상단 경계 기준)
+        text_area_start_y = -half_h + player_space_height
 
         main_font = self.fonts['main']
         price_font = self.fonts['price']
         line_height = main_font.get_height()
-        gap = line_height * 0.25
+        gap = line_height * 0.15  # 간격을 조금 줄임
+
+        # 세 줄 텍스트 (seq, level, name)를 위한 y 위치 계산
+        # 텍스트 영역의 수직 중앙을 기준으로 배치
+        text_block_center_y = text_area_start_y + text_area_total_height / 2
+
+        seq_text = self.texts.get('seq', '')
+        level_text = self.texts.get('level', '')
+        name_text = self.texts.get('name', '')
+
+        # Seq 텍스트
+        seq_y = text_block_center_y - line_height - gap
+        self._draw_rotated_text(surface, center_x, center_y, angle,
+                                f"[{seq_text}]", 0, seq_y,
+                                main_font, self.colors['text'])
 
         # 레벨 텍스트
-        level_y = text_center_y - gap / 2 - line_height / 2
+        level_y = text_block_center_y
         self._draw_rotated_text(surface, center_x, center_y, angle,
-                                self.texts.get('level', ''), 0, level_y,
+                                level_text, 0, level_y,
                                 main_font, self.colors['text'])
 
         # 이름 텍스트
-        name_y = text_center_y + gap / 2 + line_height / 2
+        name_y = text_block_center_y + line_height + gap
         self._draw_rotated_text(surface, center_x, center_y, angle,
-                                self.texts.get('name', ''), 0, name_y,
+                                name_text, 0, name_y,
                                 main_font, self.colors['text'])
 
-        # 가격 텍스트
+        # 가격 텍스트 (하단부 중앙)
         price_y = -half_h + upper_height + (self.height - upper_height) / 2
         self._draw_rotated_text(surface, center_x, center_y, angle,
                                 self.texts.get('price', ''), 0, price_y,

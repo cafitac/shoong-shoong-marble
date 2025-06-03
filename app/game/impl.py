@@ -1,10 +1,11 @@
+
 from app.board.impl import Board
-from app.board_space.abstract import BoardSpace, SpaceColor
-from app.board_space.island.impl import IslandSpace
+from app.board_space.abstract import BoardSpace
 from app.dice.dices import Dices
 from app.player.impl import Player
 from app.position_manager.impl import PositionManager
 from app.turn_manager.impl import TurnManager
+import csv
 
 
 class Game:
@@ -15,15 +16,18 @@ class Game:
     _dices: Dices
 
     def __init__(self, players: list[Player]):
-        space_1: BoardSpace = IslandSpace(seq=0, color=SpaceColor.LIGHT_GREEN)
-        # space_2: BoardSpace = BoardSpace(seq=1, color=SpaceColor.GREEN)
-        # space_3: BoardSpace = BoardSpace(seq=2, color=SpaceColor.NONE)
-
-        self._board = Board([space_1])
+        self._board = self._create_board_from_file()
         self._players = players
         self._turn_manager = TurnManager(self._players)
         self._position_manager = PositionManager(self._board, self._players)
         self._dices = Dices(count=2)
+
+    def _create_board_from_file(self) -> Board:
+        spaces_data = []
+        with open('board_space_data.csv', 'r', encoding='utf-8') as file:
+            csv_reader = csv.DictReader(file)
+            spaces_data = list(csv_reader)
+        return Board.create_from_data(spaces_data)
 
     def get_players(self) -> list[Player]:
         return self._players

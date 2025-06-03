@@ -47,7 +47,7 @@ class AttackEffectType(Enum):
 
 class PropertySpace(BoardSpace):
     def __init__(self, seq: int, name: str, price: Money, color: Optional[SpaceColor] = None):
-        super().__init__(seq, color)
+        super().__init__(seq, name, color)
         self._name = name
         self._owner: Optional[Player] = None
         self._building = Building(price)
