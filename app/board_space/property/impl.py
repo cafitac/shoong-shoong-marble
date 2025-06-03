@@ -71,7 +71,7 @@ class PropertySpace(BoardSpace):
 
     def buy_land(self, player: Player):
         price = self._building.get_price()
-        if player.get_cash() >= price.amount:
+        if player.get_cash().amount >= price.amount:
             player.spend(price)
             self._owner = player
             self._building.upgrade()

@@ -32,6 +32,9 @@ class Game:
     def get_players(self) -> list[Player]:
         return self._players
 
+    def get_turn_manager(self) -> TurnManager:
+        return self._turn_manager
+
     def get_current_player(self) -> Player:
         return self._turn_manager.get_current_player()
 

@@ -102,15 +102,25 @@ class GameUI:
                 self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if self.dice_button.is_clicked(event.pos):
+                    # 버튼 비활성화
                     self.dice_button.enabled = False
-                    dice_result = game.roll_dices()
+                    
+                    # 주사위 굴리기
+                    dice_result = game.roll_dices() 
                     self.dice_result_text = ", ".join(str(d) for d in dice_result)
+                    
+                    # 플레이어 이동
                     player = game.get_current_player()
                     game.get_position_manager().move(player, sum(dice_result))
                     arrival_space = game.get_position_manager().get_location(player)
                     print(f"{player.get_name()}이 {sum(dice_result)}칸 이동 > {arrival_space.get_name()} 도착")
-                    # 도착 이벤트
-                    # 턴 넘기기
+                    arrival_space.on_land(player)
+                    
+                    # 다음 턴 넘기기
+                    game.get_turn_manager().next()
+                    
+                    # 버튼 활성화
+                    self.dice_button.enabled = True
 
     def run(self, game):
         # game 객체를 _init_board_renderer에 전달
