@@ -34,6 +34,12 @@ class Game:
     def get_position_by_player(self, player: Player) -> BoardSpace:
         return self._position_manager.get_location(player)
 
+    def get_board(self) -> Board:
+        return self._board
+
+    def get_position_manager(self) -> PositionManager:
+        return self._position_manager
+
     def roll_dices(self) -> list[int]:
         return self._dices.roll()
 

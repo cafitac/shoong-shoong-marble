@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Optional
 from app.board_space.abstract import BoardSpace, SpaceColor
 from app.player.impl import Player
@@ -31,6 +32,14 @@ class Building:
         return self._level == 3
 
 
+class AttackEffectType(Enum):
+    NONE = 0
+    YELLOW_DUST = 1
+    INFECTIOUS_DISEASE = 2
+    ALIEN_INVASION = 3
+    BLACK_OUT = 4
+
+
 class PropertySpace(BoardSpace):
     def __init__(
         self,
@@ -44,6 +53,14 @@ class PropertySpace(BoardSpace):
         self._owner: Optional[Player] = None
         self._building = Building()
         self._building.set_price(price)
+
+        # 공격 카드 상태
+        self._attack_effect_type = AttackEffectType.NONE
+        self._attack_effect_value: float = 1.0
+        self._attack_effect_duration: int = 0
+
+        # 이벤트 카드 상태
+        self._is_festival= False # 축제 여부
 
     def on_land(self, player: Player):
         price = self._building.get_price()
@@ -93,3 +110,34 @@ class PropertySpace(BoardSpace):
         else:
             print(f"{self._name}은 {self._owner}님의 소유입니다.")
 
+    # 공격 카드 관련 함수
+    def set_attack_effect(self, type: AttackEffectType, duration: int, value: float):
+        self._attack_effect_type = type
+        self._attack_effect_duration = duration
+        self._attack_effect_value = value
+
+    def reduce_attack_effect_duration(self):
+        if self._attack_effect_duration > 0:
+            self._attack_effect_duration -= 1
+            if self._attack_effect_duration == 0:
+                self.clear_attack_effect()
+
+    def clear_attack_effect(self):
+        self._attack_effect_type = AttackEffectType.NONE
+        self._attack_effect_value = 1.0
+        self._attack_effect_duration = 0
+
+
+    # 이벤트 카드 관련 함수
+    def set_festival(self, is_festival):
+        self._is_festival = is_festival
+
+    # get
+    def get_owner(self) -> Optional[Player]:
+        return self._owner
+
+    def get_building(self) -> Building:
+        return self._building
+
+    def get_color(self) -> SpaceColor:
+        return self._color
