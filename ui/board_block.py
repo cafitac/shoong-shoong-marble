@@ -3,19 +3,32 @@ import math
 
 
 class BoardBlock:
-    def __init__(self, intrinsic_width: float, intrinsic_height: float,
-                 texts: dict, colors: dict, fonts: dict,
+    def __init__(self, width: float, height: float,
+                 board_spaces: list, colors: dict, fonts: dict,
                  upper_part_height_ratio: float = 0.75,
                  lower_part_width_factor: float = 1.0,
                  player_space_ratio_in_upper: float = 0.30):
-        self.width = intrinsic_width
-        self.height = intrinsic_height
-        self.texts = texts
+        self.width = width
+        self.height = height
         self.colors = colors
         self.fonts = fonts
         self.upper_part_height_ratio = upper_part_height_ratio
         self.lower_part_width_factor = lower_part_width_factor
         self.player_space_ratio_in_upper = player_space_ratio_in_upper
+
+        # texts 딕셔너리 초기화
+        self.texts = {}
+
+        # board_spaces가 있는 경우 첫 번째 공간의 정보로 texts 초기화
+        if board_spaces and len(board_spaces) > 0:
+            space = board_spaces[0]
+            if hasattr(space, 'get_name'):
+                self.texts['name'] = space.get_name()
+            if hasattr(space, 'get_level'):
+                self.texts['level'] = str(space.get_level())
+            if hasattr(space, 'get_price'):
+                self.texts['price'] = str(space.get_price())
+            # 다른 필요한 텍스트 정보들도 여기에 추가
 
     def _rotate_point(self, px, py, cx, cy, angle_degrees):
         angle_rad = math.radians(angle_degrees)

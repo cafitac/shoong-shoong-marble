@@ -15,7 +15,7 @@ class GameUI:
         self.running = True
         self.fonts = self._init_fonts()
         self._init_screen()
-        self.board_renderer = self._init_board_renderer()
+        self.board_renderer = None  # 초기에는 None으로 설정
 
         # PlayerPanel 색상 설정
         self.player_panel_colors = {
@@ -60,10 +60,21 @@ class GameUI:
             self.screen = pygame.display.set_mode((1280, 800), pygame.RESIZABLE)
         pygame.display.set_caption("슝슝마블 Pygame (보드 크기 최대화)")
 
-    def _init_board_renderer(self):
+    def _init_board_renderer(self, game):
         board_surface = pygame.Surface((BOARD_CONTENT_WIDTH, BOARD_CONTENT_HEIGHT), pygame.SRCALPHA)
         board_surface.fill(COLOR_BOARD_BG_UNROTATED)
-        return BoardRenderer(board_surface, self.fonts, colors=BLOCK_COLORS)
+
+        board = game.get_board()
+        board_spaces = board.get_spaces()
+        position_manager = game.get_position_manager()  # PositionManager 가져오기
+
+        return BoardRenderer(
+            board_surface=board_surface,
+            fonts=self.fonts,
+            colors=BLOCK_COLORS,
+            board_spaces=board_spaces,
+            position_manager=position_manager  # PositionManager 전달
+        )
 
     def _handle_events(self):
         for event in pygame.event.get():
@@ -73,6 +84,9 @@ class GameUI:
                 self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
     def run(self, game):
+        # game 객체를 _init_board_renderer에 전달
+        self.board_renderer = self._init_board_renderer(game)
+
         while self.running:
             self._handle_events()
             self.screen.fill(COLOR_SCREEN_BG)
@@ -91,3 +105,4 @@ class GameUI:
             self.clock.tick(60)
 
         pygame.quit()
+
