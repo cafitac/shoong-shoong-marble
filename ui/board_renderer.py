@@ -1,11 +1,15 @@
-import pygame
 import math
-from typing import Tuple, List, Dict
+from typing import List, Tuple
+
+import pygame
+
 from app.board_space.abstract import BoardSpace
 from app.player.impl import Player
 from ui.board_block import BoardBlock
+from ui.constants import BOARD_CONTENT_HEIGHT, BOARD_CONTENT_WIDTH, BOARD_EDGES, CELL_LONG, CELL_SHORT, COLOR_BLACK, \
+    COLOR_CORNER_FILL, COLOR_WHITE, \
+    CORNER_POSITIONS, CORNER_SIDE
 from ui.corner_block import CornerBlock
-from constants import *
 
 
 class BoardRenderer:
@@ -25,8 +29,8 @@ class BoardRenderer:
         corner_spaces = []
         spaces_by_seq = {space.get_seq(): space for space in self.board_spaces}
 
-        # 코너 위치 매핑 정의
-        corner_seq_map = {0: 0, 8: 1, 16: 2, 24: 3}  # seq:CORNER_POSITIONS 인덱스
+        # 코너 위치 매핑 정의 (시작 -> 무인도 -> 축제 -> 슝슝여행 순서로)
+        corner_seq_map = {0: 0, 24: 1, 8: 2, 16: 3}  # seq:CORNER_POSITIONS 인덱스
 
         # 코너 블록 공간 찾기
         for seq in corner_seq_map.keys():
@@ -180,7 +184,8 @@ class BoardRenderer:
     def _get_position_coordinates(self, position: int) -> Tuple[float, float]:
         """주어진 위치(seq)에 해당하는 보드 상의 좌표를 계산합니다."""
         seq = position
-        corner_seq_map = {0: 0, 8: 1, 16: 2, 24: 3}  # seq:CORNER_POSITIONS 인덱스
+        # 시작 -> 무인도 -> 축제 -> 슝슝여행 순서로 매핑
+        corner_seq_map = {0: 0, 24: 1, 8: 2, 16: 3}  # seq:CORNER_POSITIONS 인덱스
 
         # 코너 블록인 경우
         if seq in corner_seq_map:
