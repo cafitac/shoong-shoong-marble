@@ -75,11 +75,13 @@ class PositionManager:
             self._players_at_position[new_position] = []
         self._players_at_position[new_position].append(player)
 
-        # 한 바퀴 돌았는지 확인
-        if new_position < old_position:
-            # 한 바퀴 돌았을 때 추가 효과 처리 (예: 시작점 통과 보상)
-            print(f"{player.get_name()}이(가) 출발점을 통과했습니다!")
-            # 추가 보상 등의 로직을 여기에 구현할 수 있습니다.
+        # 한 바퀴 돌았는지 확인 (시작점을 지나갔는지)
+        if new_position < old_position or (old_position + steps) >= board_size:
+            # 시작점을 지나갔을 때 30만원 지급
+            from app.money.impl import Money
+            reward = Money(300000)
+            player.receive(reward)
+            print(f"{player.get_name()}이(가) 출발점을 통과하여 {reward}을(를) 받았습니다!")
 
         # 모든 플레이어의 현재 위치 출력 (디버깅용)
         print("\n현재 모든 플레이어의 위치:")

@@ -21,7 +21,7 @@ class TouristSpotSpace(BoardSpace):
 
         travel_fee = Money(100_000)
         if player.get_cash() >= travel_fee:
-            player.spend(-travel_fee)
+            player.spend(travel_fee)
             # TODO : 플레이어에게 세계여행 플래그 부여? (ex: player.world_travel_ticket = True)
             # TODO : 실제 ui 상 세계 여행지 선택 및 이동할 수 있는 로직 구현이 필요합니다.
             setattr(player, "world_travel_ticket", True)
