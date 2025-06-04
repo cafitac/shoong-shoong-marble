@@ -33,6 +33,9 @@ class Player:
         }
         return f"{color_names[self._color]} {self._idx}번 플레이어({self._name})"
 
+    def get_idx(self) -> int:
+        return self._idx
+
     def get_name(self) -> str:
         return self._name
 
@@ -43,7 +46,7 @@ class Player:
         return self._cash
 
     def spend(self, amount: Money) -> None:
-        self._cash = self._cash + amount
+        self._cash = self._cash - amount
 
     def is_turn_blocked(self) -> bool:
         return self._turns_to_wait > 0
@@ -65,5 +68,9 @@ class Player:
     def is_on_island(self) -> bool:
         return self._on_island
 
+    def receive(self, amount: Money):
+        self._cash = self._cash + amount
+
     def get_color(self) -> Tuple[int, int, int]:
         return self._color
+

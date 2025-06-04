@@ -1,22 +1,15 @@
 import math
+from typing import List, Tuple
+
 import pygame
-from typing import Dict, List
-from app.player.impl import Player
+
 from app.board_space.abstract import BoardSpace
+from app.player.impl import Player
 from ui.board_block import BoardBlock
+from ui.constants import BOARD_CONTENT_HEIGHT, BOARD_CONTENT_WIDTH, BOARD_EDGES, CELL_LONG, CELL_SHORT, COLOR_BLACK, \
+    COLOR_CORNER_FILL, COLOR_WHITE, \
+    CORNER_POSITIONS, CORNER_SIDE
 from ui.corner_block import CornerBlock
-from ui.constants import (
-    BOARD_CELLS_PER_SIDE,  # 각 변의 일반 셀 개수, 7로 가정
-    CELL_LONG,
-    CELL_SHORT,
-    CORNER_SIDE,
-    BOARD_EDGES,
-    CORNER_POSITIONS,
-    BOARD_CONTENT_WIDTH,
-    BOARD_CONTENT_HEIGHT,
-    COLOR_CORNER_FILL,
-    COLOR_BLACK
-)
 
 
 class BoardRenderer:
@@ -27,43 +20,40 @@ class BoardRenderer:
         self.rotation_angle = 45
         self.board_spaces = board_spaces  # 모든 공간 (코너 + 일반)
         self.position_manager = position_manager
+        self.player_token_radius = 15  # 플레이어 토큰 반지름
         self._init_blocks()
         self._draw_initial_board()
 
     def _init_blocks(self):
-        corner_seq_map = {
-            "START": 0,
-            "ISLAND": 8,
-            "FESTIVAL": 16,
-            "TRAVEL": 24,
-        }
+        # 각 코너 위치의 seq 매핑
+        corner_spaces = []
         spaces_by_seq = {space.get_seq(): space for space in self.board_spaces}
 
-        _corner_space_objects = [
-            spaces_by_seq.get(corner_seq_map["START"]),
-            spaces_by_seq.get(corner_seq_map["TRAVEL"]),
-            spaces_by_seq.get(corner_seq_map["ISLAND"]),
-            spaces_by_seq.get(corner_seq_map["FESTIVAL"]),
-        ]
+        # 코너 위치 매핑 정의 (시작 -> 무인도 -> 축제 -> 슝슝여행 순서로)
+        corner_seq_map = {0: 0, 24: 1, 8: 2, 16: 3}  # seq:CORNER_POSITIONS 인덱스
 
-        corner_spaces_for_blocks = [cs for cs in _corner_space_objects if cs is not None]
+        # 코너 블록 공간 찾기
+        for seq in corner_seq_map.keys():
+            if seq in spaces_by_seq:
+                corner_spaces.append(spaces_by_seq[seq])
 
+        # 코너 블록 생성
         self.corner_blocks = [
             CornerBlock(
                 CORNER_SIDE, COLOR_CORNER_FILL, COLOR_BLACK, space, font=self.fonts['corner']
-            ) for space in corner_spaces_for_blocks
+            ) for space in corner_spaces
         ]
 
-        corner_seqs = set(corner_seq_map.values())
-        non_corner_space_objects = [
-            space for space in self.board_spaces if space.get_seq() not in corner_seqs
-        ]
+        # 코너가 아닌 일반 블록 공간 찾기
+        corner_seqs = set(corner_seq_map.keys())
+        non_corner_spaces = [space for space in self.board_spaces if space.get_seq() not in corner_seqs]
+
         # BoardBlock 객체로 변환
         all_non_corner_blocks = [
             BoardBlock(
                 CELL_SHORT, CELL_LONG, space, self.colors,
                 {'main': self.fonts['main'], 'price': self.fonts['price']}
-            ) for space in non_corner_space_objects
+            ) for space in non_corner_spaces
         ]
 
         # 각 라인별로 사용할 BoardBlock 객체들을 미리 준비 (seq 기준으로 필터링 및 정렬)
@@ -126,124 +116,109 @@ class BoardRenderer:
     def draw_board(self, screen, center_x, center_y):
         current_w, current_h = screen.get_size()
         scale_factor = self._calculate_scale_factor(current_w, current_h)
-        scaled_board = self._scale_board(scale_factor)
+
+        # 플레이어 말을 그리기 위한 임시 보드 생성
+        temp_board = pygame.Surface((BOARD_CONTENT_WIDTH, BOARD_CONTENT_HEIGHT), pygame.SRCALPHA)
+        temp_board.blit(self.board_surface, (0, 0))
+
+        # 플레이어 말 그리기 (원본 크기 보드에)
+        if self.position_manager:
+            self._draw_player_tokens(temp_board)
+
+        # 스케일링 및 회전
+        scaled_board = self._scale_board(temp_board, scale_factor)
         rotated_board = pygame.transform.rotate(scaled_board, self.rotation_angle)
         rect = rotated_board.get_rect(center=(center_x, center_y))
         screen.blit(rotated_board, rect)
-        if self.position_manager:
-            self._draw_players(screen, rect, scale_factor)
 
-    def _draw_players(self, screen, board_rect, scale_factor):
-        # 참고: 이 함수는 플레이어 위치 계산 로직이 변경된 보드 레이아웃을 반영하도록 수정되어야 할 수 있습니다.
-        for player in self.position_manager._positions.keys():
-            position = self.position_manager._positions[player]  # 이 position이 새로운 보드 순서에 맞는 값인지 확인 필요
-            pos_coords = self._get_position_coordinates(position, scale_factor)
-            if pos_coords:
-                x, y = pos_coords
-                rotated_x, rotated_y = self._rotate_point(
-                    x - board_rect.width / 2,
-                    y - board_rect.height / 2,
-                    self.rotation_angle
-                )
-                final_x = rotated_x + board_rect.centerx
-                final_y = rotated_y + board_rect.centery
-                player_radius = int(CELL_SHORT * scale_factor * 0.15)
-                pygame.draw.circle(screen, player.get_color(), (int(final_x), int(final_y)), player_radius)
+    def _draw_player_tokens(self, board_surface):
+        # 각 위치별 플레이어 목록 생성
+        players_at_position = {}
+        for player in self.position_manager._players:
+            position = self.position_manager.get_position(player)
+            if position not in players_at_position:
+                players_at_position[position] = []
+            players_at_position[position].append(player)
 
-    def _get_position_coordinates(self, position: int, scale_factor: float) -> tuple[float, float]:
-        # 경고: 이 함수는 변경된 보드 레이아웃(그리기 순서)을 반영하도록 수정되어야 합니다.
-        # 현재는 플레이어 위치가 이전 보드 레이아웃 기준으로 계산될 수 있습니다.
-        # 예를 들어, position이 BoardSpace의 seq 값과 동일하다면,
-        # seq 1은 왼쪽 라인 하단, seq 9는 위쪽 라인 좌측 등의 위치로 계산되어야 합니다.
-        # 이 함수의 수정은 PositionManager가 position 값을 어떻게 관리하는지에 따라 달라집니다.
+        # 각 위치에 플레이어 말 그리기
+        for position, players in players_at_position.items():
+            x, y = self._get_position_coordinates(position)
+            self._draw_players_at_position(board_surface, x, y, players)
 
-        # 임시로 기존 로직 유지 (플레이어 위치가 올바르지 않을 수 있음)
-        total_cell_count_per_side = 7  # BOARD_CELLS_PER_SIDE 와 동일해야 함
+    def _draw_players_at_position(self, surface, x, y, players):
+        """특정 위치에 있는 플레이어들을 그립니다."""
+        num_players = len(players)
+        radius = self.player_token_radius
 
-        # 코너를 포함한 전체 위치로 변환하는 로직 필요 (예: START=0, seq 1~7, ISLAND=8, seq 9~15 ...)
-        # 아래는 매우 단순화된 예시이며, 실제 position 값의 의미에 따라 전면적인 재설계가 필요합니다.
-        # 이 부분은 플레이어 이동 및 위치 관리 로직과 긴밀하게 연관되어 수정되어야 합니다.
+        # 플레이어 수에 따른 배치 패턴
+        offsets = [
+            [],  # 0명
+            [(0, 0)],  # 1명 (중앙)
+            [(-radius * 1.2, 0), (radius * 1.2, 0)],  # 2명 (가로)
+            [(-radius * 1.2, -radius * 1.2), (radius * 1.2, -radius * 1.2), (0, radius * 1.2)],  # 3명 (삼각형)
+            [(-radius * 1.2, -radius * 1.2), (radius * 1.2, -radius * 1.2), (-radius * 1.2, radius * 1.2),
+             (radius * 1.2, radius * 1.2)]  # 4명 (사각형)
+        ]
 
-        # --- 임시 플레이어 위치 계산 시작 (정확하지 않을 수 있음) ---
-        # 이 코드는 실제 게임 로직과 맞지 않을 가능성이 매우 높으며, 개념적 예시입니다.
-        # 올바른 플레이어 표시를 위해서는 PositionManager와 이 함수의 로직을 함께 검토해야 합니다.
-        # 예를 들어, position이 csv의 seq와 동일하다고 가정.
+        pattern = offsets[min(num_players, 4)]
+
+        # 각 플레이어 말 그리기
+        for i, player in enumerate(players[:4]):  # 최대 4명까지만 표시
+            color = player.get_color()
+
+            # 플레이어 위치 계산
+            player_x = int(x + pattern[i][0])
+            player_y = int(y + pattern[i][1])
+
+            # 플레이어 말 그리기
+            pygame.draw.circle(surface, color, (player_x, player_y), radius)
+            pygame.draw.circle(surface, COLOR_BLACK, (player_x, player_y), radius, 2)  # 테두리
+
+            # 플레이어 ID 표시
+            player_id_str = str(player.get_idx() + 1)  # 1부터 시작하는 번호
+            font = pygame.font.SysFont("Arial", max(10, 14), bold=True)
+            text = font.render(player_id_str, True, COLOR_WHITE)
+            text_rect = text.get_rect(center=(player_x, player_y))
+            surface.blit(text, text_rect)
+
+    def _get_position_coordinates(self, position: int) -> Tuple[float, float]:
+        """주어진 위치(seq)에 해당하는 보드 상의 좌표를 계산합니다."""
         seq = position
-        x, y = 0, 0
+        # 시작 -> 무인도 -> 축제 -> 슝슝여행 순서로 매핑
+        corner_seq_map = {0: 0, 24: 1, 8: 2, 16: 3}  # seq:CORNER_POSITIONS 인덱스
 
-        # 해당 seq의 BoardBlock을 찾아서 그 Block의 space.get_seq()와 비교해야합니다.
-        # 하지만 BoardBlock 자체는 BoardRenderer에 라인별로 저장되어 있어 직접 접근이 어렵습니다.
-        # 따라서, 이 함수는 position (seq) 값을 받아서, 해당 seq가 어느 라인의 몇 번째 블록에 해당하는지
-        # 그리고 그 블록의 중심 좌표가 어디인지를 계산해야 합니다.
+        # 코너 블록인 경우
+        if seq in corner_seq_map:
+            return CORNER_POSITIONS[corner_seq_map[seq]]
 
-        # 코너 블록의 seq와 일치하는지 확인
-        corner_block_found = False
-        for idx, cb in enumerate(self.corner_blocks):
-            if cb.space.get_seq() == seq:  # CornerBlock도 space 속성을 가짐 (수정 필요 가정)
-                # CornerBlock의 get_space()가 없다면, CornerBlock 생성자에 space를 저장하고 직접 접근해야 함
-                # 여기서는 CornerBlock이 space 속성을 가지고 있고, 그 space가 get_seq()를 가진다고 가정
-                x, y = CORNER_POSITIONS[idx]
-                corner_block_found = True
-                break
+        # 일반 블록인 경우
+        # 왼쪽 라인 (seq 1-7, 아래 -> 위)
+        if 1 <= seq <= 7:
+            center_x = BOARD_EDGES['left'] + CELL_LONG / 2
+            center_y = BOARD_EDGES['bottom'] - CORNER_SIDE - (seq - 0.5) * CELL_SHORT
+            return center_x, center_y
 
-        if not corner_block_found:
-            # 왼쪽 라인 (seq 1-7, 아래 -> 위)
-            if 1 <= seq <= 7:
-                block_index_in_line = seq - 1
-                if 0 <= block_index_in_line < len(self.left_line_blocks):
-                    center_x_left = BOARD_EDGES['left'] + CELL_LONG / 2
-                    # 아래에서 위로 그리므로, 첫 블록(seq 1)이 가장 아래에 위치
-                    base_y = BOARD_EDGES['bottom'] - CORNER_SIDE - CELL_SHORT / 2
-                    y = base_y - block_index_in_line * CELL_SHORT
-                    x = center_x_left
-                else:
-                    corner_block_found = True  # 임시로 에러 처리 대신 코너로 넘김
-            # 위쪽 라인 (seq 9-15, 좌 -> 우)
-            elif 9 <= seq <= 15:
-                block_index_in_line = seq - 9
-                if 0 <= block_index_in_line < len(self.top_line_blocks):
-                    center_y_top = BOARD_EDGES['top'] + CELL_LONG / 2
-                    # 좌에서 우로 그리므로, 첫 블록(seq 9)이 가장 왼쪽에 위치
-                    base_x = BOARD_EDGES['left'] + CORNER_SIDE + CELL_SHORT / 2
-                    x = base_x + block_index_in_line * CELL_SHORT
-                    y = center_y_top
-                else:
-                    corner_block_found = True  # 임시
-            # 오른쪽 라인 (seq 17-23, 위 -> 아래)
-            elif 17 <= seq <= 23:
-                block_index_in_line = seq - 17
-                if 0 <= block_index_in_line < len(self.right_line_blocks):
-                    center_x_right = BOARD_EDGES['right'] - CELL_LONG / 2
-                    # 위에서 아래로 그리므로, 첫 블록(seq 17)이 가장 위에 위치
-                    base_y = BOARD_EDGES['top'] + CORNER_SIDE + CELL_SHORT / 2
-                    y = base_y + block_index_in_line * CELL_SHORT
-                    x = center_x_right
-                else:
-                    corner_block_found = True  # 임시
-            # 아래쪽 라인 (seq 25-31, 우 -> 좌)
-            elif 25 <= seq <= 31:
-                block_index_in_line = seq - 25
-                if 0 <= block_index_in_line < len(self.bottom_line_blocks):
-                    center_y_bottom = BOARD_EDGES['bottom'] - CELL_LONG / 2
-                    # 우에서 좌로 그리므로, 첫 블록(seq 25)이 가장 오른쪽에 위치
-                    base_x = BOARD_EDGES['right'] - CORNER_SIDE - CELL_SHORT / 2
-                    x = base_x - block_index_in_line * CELL_SHORT
-                    y = center_y_bottom
-                else:
-                    corner_block_found = True  # 임시
-            else:
-                print(f"Warning: Player position seq {seq} is out of defined board space ranges for non-corners.")
-                # 기본 위치 또는 오류 처리
-                x, y = BOARD_EDGES['left'], BOARD_EDGES['top']  # 임시 위치
-                corner_block_found = True  # 이 로직을 벗어나도록 설정
+        # 위쪽 라인 (seq 9-15, 좌 -> 우)
+        elif 9 <= seq <= 15:
+            center_x = BOARD_EDGES['left'] + CORNER_SIDE + (seq - 8.5) * CELL_SHORT
+            center_y = BOARD_EDGES['top'] + CELL_LONG / 2
+            return center_x, center_y
 
-        if corner_block_found and not (x and y):  # 코너로 판정되었으나 x,y가 0이면 기본값
-            print(f"Warning: Player position seq {seq} (corner) couldn't find exact CORNER_POSITION.")
-            x, y = BOARD_EDGES['left'], BOARD_EDGES['top']
+        # 오른쪽 라인 (seq 17-23, 위 -> 아래)
+        elif 17 <= seq <= 23:
+            center_x = BOARD_EDGES['right'] - CELL_LONG / 2
+            center_y = BOARD_EDGES['top'] + CORNER_SIDE + (seq - 16.5) * CELL_SHORT
+            return center_x, center_y
 
-        # --- 임시 플레이어 위치 계산 끝 ---
+        # 아래쪽 라인 (seq 25-31, 우 -> 좌)
+        elif 25 <= seq <= 31:
+            center_x = BOARD_EDGES['right'] - CORNER_SIDE - (seq - 24.5) * CELL_SHORT
+            center_y = BOARD_EDGES['bottom'] - CELL_LONG / 2
+            return center_x, center_y
 
-        return x * scale_factor, y * scale_factor
+        # 정의되지 않은 위치
+        print(f"경고: 플레이어 위치 seq {seq}는 정의된 보드 공간 범위를 벗어납니다.")
+        return BOARD_EDGES['left'] + CORNER_SIDE / 2, BOARD_EDGES['bottom'] - CORNER_SIDE / 2
 
     def _rotate_point(self, x, y, angle_degrees):
         angle_rad = math.radians(angle_degrees)
@@ -254,7 +229,8 @@ class BoardRenderer:
         return new_x, new_y
 
     def update_player_position(self, player: Player, position: int):
-        pass
+        if self.position_manager:
+            self.position_manager.update_player_position(player, position)
 
     def _calculate_scale_factor(self, screen_width, screen_height):
         screen_diagonal = min(screen_width, screen_height) * 0.95
@@ -264,7 +240,7 @@ class BoardRenderer:
                         screen_height / BOARD_CONTENT_HEIGHT) * 1.5
         return min(scale_factor, max_scale)
 
-    def _scale_board(self, scale_factor):
-        scaled_width = max(10, int(self.board_surface.get_width() * scale_factor))
-        scaled_height = max(10, int(self.board_surface.get_height() * scale_factor))
-        return pygame.transform.smoothscale(self.board_surface, (scaled_width, scaled_height))
+    def _scale_board(self, board_surface, scale_factor):
+        scaled_width = max(10, int(board_surface.get_width() * scale_factor))
+        scaled_height = max(10, int(board_surface.get_height() * scale_factor))
+        return pygame.transform.smoothscale(board_surface, (scaled_width, scaled_height))
