@@ -56,7 +56,7 @@ class Board:
         elif space_type == 'tour':
             return TourSpace(seq=seq, name=name)
         elif space_type == 'tax_office':
-            return TaxOfficeSpace(seq=seq, name=name)
+            return TaxOfficeSpace(seq=seq, name=name, board_spaces=[])
         else:
             raise ValueError(f"알 수 없는 공간 유형: {space_type}")
 

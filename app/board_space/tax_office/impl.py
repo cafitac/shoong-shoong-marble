@@ -1,14 +1,18 @@
-from app.board_space.abstract import BoardSpace
+from typing import Optional
+
+from app.board_space.abstract import BoardSpace, SpaceColor
 from app.player.impl import Player
 from app.board_space.property.impl import PropertySpace
 
+
 class TaxOfficeSpace(BoardSpace):
-    def __init__(self, board_spaces):
+    def __init__(self, seq: int, name: str, board_spaces, color: Optional[SpaceColor] = None):
+        super().__init__(seq, name, color)
         self.board_spaces = board_spaces
-    
+
     def on_land(self, player: Player):
         print(f"{player}님이 국세청에 도착했습니다. 세금을 납부해야 합니다.")
-        
+
         # 1. 플레이어가 소유한 모든 PropertySpace 찾기
         player_properties = [
             # TODO : property_data 연동 필요

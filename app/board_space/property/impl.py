@@ -51,7 +51,6 @@ class PropertySpace(BoardSpace):
         self._name = name
         self._owner: Optional[Player] = None
         self._building = Building(price)
-        self._building.set_price(price)
         self.olympic = False
 
         # 공격 카드 상태
