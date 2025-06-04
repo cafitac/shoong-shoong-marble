@@ -4,7 +4,7 @@ from app.game.impl import Game
 # 축제(올림픽) 개최
 # 내 현재 도시에 올림픽 마크 설치 → 해당 통행료 ×2 (중첩 불가)
 class FestivalCard(ChanceCard):
-    def __init__(self, card_type: ChanceCardType, name: str, description: str):
+    def __init__(self):
         super().__init__(ChanceCardType.INSTANT, "축제 개최", "즉시 내 현재 도시에 축제 마크 설치 > 해당 통행료 x 2 (중첩 불가)")
 
     def use(self, game: Game):

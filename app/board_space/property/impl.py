@@ -73,7 +73,7 @@ class PropertySpace(BoardSpace):
 
     def buy_land(self, player: Player):
         price = self._building.get_price()
-        if player.get_cash() >= price.amount:
+        if player.get_cash().amount >= price.amount:
             player.spend(price)
             self._owner = player
             self._building.upgrade()
@@ -97,7 +97,7 @@ class PropertySpace(BoardSpace):
             print(f"{self._name}은 이미 랜드마크까지 건설된 상태입니다!")
 
     def _try_upgrade(self, player: Player, cost: Money, building_name: str):
-        if player.get_cash() >= cost.amount:
+        if player.get_cash().amount >= cost.amount:
             player.spend(cost)
             self._building.upgrade()
             print(f"{player}님이 {self._name}에 {building_name}을 건설했습니다!")
@@ -106,7 +106,7 @@ class PropertySpace(BoardSpace):
 
     def pay_toll(self, player: Player):
         toll = self._building.calculate_toll()
-        if player.get_cash() >= toll.amount:
+        if player.get_cash().amount >= toll.amount:
             player.spend(toll)
             self._owner.receive(toll)
             print(f"{player}님이 {self._name}의 통행료 {toll}를 지불했습니다!")
@@ -124,7 +124,7 @@ class PropertySpace(BoardSpace):
 
     def purchase_from_owner(self, player: Player):
         acquisition_cost = self._building.get_acquisition_cost()
-        if player.get_cash() >= acquisition_cost.amount:
+        if player.get_cash().amount >= acquisition_cost.amount:
             player.spend(acquisition_cost)
             self._owner = player
             print(f"{player}님이 {self._name}을 인수했습니다!")
