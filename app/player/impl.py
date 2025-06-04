@@ -43,7 +43,7 @@ class Player:
         return self._cash
 
     def spend(self, amount: Money) -> None:
-        self._cash = self._cash + amount
+        self._cash = self._cash - amount
 
     def is_turn_blocked(self) -> bool:
         return self._turns_to_wait > 0

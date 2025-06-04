@@ -1,6 +1,7 @@
 from typing import Optional
 
 from app.board_space.abstract import BoardSpace, SpaceColor
+from app.money.impl import Money
 from app.player.impl import Player
 from app.board_space.property.impl import PropertySpace
 
@@ -24,11 +25,11 @@ class TaxOfficeSpace(BoardSpace):
         total_value = sum(prop._building.get_price() for prop in player_properties)
 
         # 3. 세금 계산
-        tax = int(total_value * 0.05)
+        tax = Money(int(total_value * 0.05))
 
         # 4. 소지금 확인 및 차감
         if player.get_cash() >= tax:
-            player.spend(-tax)
+            player.spend(tax)
             print(f"전체 건물 가치: {total_value}원, 세금(5%): {tax}원을 납부했습니다.")
         else:
             print(f"소지금이 부족합니다! (보유 현금: {player.get_cash()}원, 세금: {tax}원)")

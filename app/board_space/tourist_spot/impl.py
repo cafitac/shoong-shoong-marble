@@ -19,7 +19,7 @@ class TouristSpotSpace(BoardSpace):
         print(f"{player}님이 세계여행에 도착했습니다. 10만 마블을 지불하고 세계여행을 할 수 있습니다.")
         print("다음 자신의 차례에 주사위를 던지지 않고 원하는 지역으로 바로 이동할 수 있습니다.")
 
-        travel_fee = 100_000
+        travel_fee = Money(100_000)
         if player.get_cash() >= travel_fee:
             player.spend(-travel_fee)
             # TODO : 플레이어에게 세계여행 플래그 부여? (ex: player.world_travel_ticket = True)
