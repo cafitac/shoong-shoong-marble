@@ -1,23 +1,11 @@
-import math
 import pygame
-from typing import Dict, List, Tuple
-from app.player.impl import Player
+import math
+from typing import Tuple, List, Dict
 from app.board_space.abstract import BoardSpace
+from app.player.impl import Player
 from ui.board_block import BoardBlock
 from ui.corner_block import CornerBlock
-from ui.constants import (
-    BOARD_CELLS_PER_SIDE,  # 각 변의 일반 셀 개수, 7로 가정
-    CELL_LONG,
-    CELL_SHORT,
-    CORNER_SIDE,
-    BOARD_EDGES,
-    CORNER_POSITIONS,
-    BOARD_CONTENT_WIDTH,
-    BOARD_CONTENT_HEIGHT,
-    COLOR_CORNER_FILL,
-    COLOR_BLACK,
-    COLOR_WHITE
-)
+from constants import *
 
 
 class BoardRenderer:
@@ -33,39 +21,35 @@ class BoardRenderer:
         self._draw_initial_board()
 
     def _init_blocks(self):
-        corner_seq_map = {
-            "START": 0,
-            "ISLAND": 8,
-            "FESTIVAL": 16,
-            "TRAVEL": 24,
-        }
+        # 각 코너 위치의 seq 매핑
+        corner_spaces = []
         spaces_by_seq = {space.get_seq(): space for space in self.board_spaces}
 
-        _corner_space_objects = [
-            spaces_by_seq.get(corner_seq_map["START"]),
-            spaces_by_seq.get(corner_seq_map["TRAVEL"]),
-            spaces_by_seq.get(corner_seq_map["ISLAND"]),
-            spaces_by_seq.get(corner_seq_map["FESTIVAL"]),
-        ]
+        # 코너 위치 매핑 정의
+        corner_seq_map = {0: 0, 8: 1, 16: 2, 24: 3}  # seq:CORNER_POSITIONS 인덱스
 
-        corner_spaces_for_blocks = [cs for cs in _corner_space_objects if cs is not None]
+        # 코너 블록 공간 찾기
+        for seq in corner_seq_map.keys():
+            if seq in spaces_by_seq:
+                corner_spaces.append(spaces_by_seq[seq])
 
+        # 코너 블록 생성
         self.corner_blocks = [
             CornerBlock(
                 CORNER_SIDE, COLOR_CORNER_FILL, COLOR_BLACK, space, font=self.fonts['corner']
-            ) for space in corner_spaces_for_blocks
+            ) for space in corner_spaces
         ]
 
-        corner_seqs = set(corner_seq_map.values())
-        non_corner_space_objects = [
-            space for space in self.board_spaces if space.get_seq() not in corner_seqs
-        ]
+        # 코너가 아닌 일반 블록 공간 찾기
+        corner_seqs = set(corner_seq_map.keys())
+        non_corner_spaces = [space for space in self.board_spaces if space.get_seq() not in corner_seqs]
+
         # BoardBlock 객체로 변환
         all_non_corner_blocks = [
             BoardBlock(
                 CELL_SHORT, CELL_LONG, space, self.colors,
                 {'main': self.fonts['main'], 'price': self.fonts['price']}
-            ) for space in non_corner_space_objects
+            ) for space in non_corner_spaces
         ]
 
         # 각 라인별로 사용할 BoardBlock 객체들을 미리 준비 (seq 기준으로 필터링 및 정렬)
@@ -146,7 +130,8 @@ class BoardRenderer:
     def _draw_player_tokens(self, board_surface):
         # 각 위치별 플레이어 목록 생성
         players_at_position = {}
-        for player, position in self.position_manager._positions.items():
+        for player in self.position_manager._players:
+            position = self.position_manager.get_position(player)
             if position not in players_at_position:
                 players_at_position[position] = []
             players_at_position[position].append(player)
@@ -239,7 +224,8 @@ class BoardRenderer:
         return new_x, new_y
 
     def update_player_position(self, player: Player, position: int):
-        pass
+        if self.position_manager:
+            self.position_manager.update_player_position(player, position)
 
     def _calculate_scale_factor(self, screen_width, screen_height):
         screen_diagonal = min(screen_width, screen_height) * 0.95

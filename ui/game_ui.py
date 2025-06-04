@@ -4,8 +4,8 @@ import math
 
 from config.ui_config import UIConfig
 from constants import *
-from board_renderer import BoardRenderer
-from player_panel import PlayerPanel
+from ui.board_renderer import BoardRenderer
+from ui.player_panel import PlayerPanel
 from ui.components.button import Button
 
 
@@ -104,6 +104,38 @@ class GameUI:
         else:
             self.dice_button.rect = pygame.Rect(button_x, button_y, button_width, button_height)
 
+    def _handle_dice_roll(self, game):
+        # 주사위 굴리기
+        dice_result = game.roll_dices()
+        self.dice_result_text = f"주사위: {', '.join(str(d) for d in dice_result)} = {sum(dice_result)}"
+
+        # 현재 플레이어 가져오기
+        current_player = game.get_current_player()
+
+        # 플레이어가 턴이 차단된 상태인지 확인
+        if current_player.is_turn_blocked():
+            # 차단된 턴 처리 - 다음 턴으로 진행
+            current_player.next_turn()
+            print(f"{current_player.get_name()}의 턴이 차단되었습니다. 남은 차단 턴: {current_player._turns_to_wait}")
+
+            # 턴 매니저를 사용하여 다음 플레이어로 넘기기
+            game.get_turn_manager().next()
+            return
+
+        # position_manager를 통해 플레이어 이동
+        position_manager = game.get_position_manager()
+        position_manager.move(current_player, sum(dice_result))
+
+        # 도착한 위치 정보 가져오기
+        arrival_space = position_manager.get_location(current_player)
+        print(f"{current_player.get_name()}이 {sum(dice_result)}칸 이동 > {arrival_space.get_name()} 도착")
+
+        # 도착한 칸의 효과 발동
+        arrival_space.on_land(current_player)
+
+        # 턴 매니저를 통해 다음 플레이어로 턴 전환
+        game.get_turn_manager().next()
+
     def _handle_events(self, game):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -116,19 +148,8 @@ class GameUI:
                     # 버튼 비활성화
                     self.dice_button.enabled = False
 
-                    # 주사위 굴리기
-                    dice_result = game.roll_dices()
-                    self.dice_result_text = f"주사위: {', '.join(str(d) for d in dice_result)} = {sum(dice_result)}"
-
-                    # 플레이어 이동
-                    player = game.get_current_player()
-                    game.get_position_manager().move(player, sum(dice_result))
-                    arrival_space = game.get_position_manager().get_location(player)
-                    print(f"{player.get_name()}이 {sum(dice_result)}칸 이동 > {arrival_space.get_name()} 도착")
-                    arrival_space.on_land(player)
-
-                    # 다음 턴 넘기기
-                    game.get_turn_manager().next()
+                    # 주사위 굴리기 및 플레이어 이동 처리
+                    self._handle_dice_roll(game)
 
                     # 버튼 활성화
                     self.dice_button.enabled = True
