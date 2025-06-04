@@ -18,8 +18,9 @@ class SpaceColor(Enum):
 
 
 class BoardSpace(ABC):
-    def __init__(self, seq: int, color: Optional[SpaceColor] = None):
+    def __init__(self, seq: int, name: str, color: Optional[SpaceColor] = None):
         self._seq: int = seq
+        self._name: str = name
         self._color: SpaceColor = color if color is not None else SpaceColor.NONE
         self._landed_players: List[Player] = []
 
@@ -29,3 +30,12 @@ class BoardSpace(ABC):
 
     def get_seq(self) -> int:
         return self._seq
+
+    def get_name(self) -> str:
+        return self._name
+
+    def get_color(self) -> SpaceColor:
+        return self._color
+
+    def get_landed_players(self) -> List[Player]:
+        return self._landed_players
