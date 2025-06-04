@@ -65,5 +65,9 @@ class Player:
     def is_on_island(self) -> bool:
         return self._on_island
 
+    def receive(self, amount: Money):
+        self._cash = self._cash + amount
+
     def get_color(self) -> Tuple[int, int, int]:
         return self._color
+
