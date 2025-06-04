@@ -1,5 +1,8 @@
 from app.chance_card.abstract import ChanceCard, ChanceCardType
-from app.game.impl import Game
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.game.impl import Game
 
 # 도시 체인지
 # 내 도시 1곳 ↔ 상대 도시 1곳 강제 교환
@@ -8,7 +11,7 @@ class CityChangeCard(ChanceCard):
     def __init__(self):
         super().__init__(ChanceCardType.INSTANT, "도시 체인지", "내 도시 1곳과 상대 도시 1곳 강제 교환 (즉시 사용)")
 
-    def use(self, game: Game):
+    def use(self, game: 'Game'):
         player = game.get_current_player()  # 현재 플레이어
 
         my_city = game.get_board().get_city(0) # 내 도시

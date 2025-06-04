@@ -1,5 +1,8 @@
 from app.chance_card.abstract import ChanceCard, ChanceCardType
-from app.game.impl import Game
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.game.impl import Game
 
 # 강제 도시 매각
 # 지정한 상대 도시 1곳 즉시 매각(건물 파괴)
@@ -8,7 +11,7 @@ class ForcedCitySaleCard(ChanceCard):
     def __init__(self):
         super().__init__(ChanceCardType.INSTANT, "강제 도시 매각", "지정한 상대 도시 1곳 즉시 매각 (랜드마크 제외)")
 
-    def use(self, game: Game):
+    def use(self, game: 'Game'):
         target_city = game.get_board().get_city(1)  # 상대 도시
 
         if target_city.get_owner() is None:         # 소유 땅 없음

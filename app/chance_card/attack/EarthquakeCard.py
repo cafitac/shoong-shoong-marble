@@ -1,5 +1,8 @@
 from app.chance_card.abstract import ChanceCard, ChanceCardType
-from app.game.impl import Game
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.game.impl import Game
 
 # 지진
 # 건물 단계 1 단계씩 파괴
@@ -8,7 +11,7 @@ class EarthquakeCard(ChanceCard):
     def __init__(self):
         super().__init__(ChanceCardType.INSTANT, "지진", "건물 단계 1 단계씩 파괴 (랜드마크 제외)")
 
-    def use(self, game: Game):
+    def use(self, game: 'Game'):
         target_city = game.get_board().get_city(1) # 지정 도시
 
         # 랜드마크일 경우

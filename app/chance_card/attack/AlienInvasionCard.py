@@ -1,7 +1,10 @@
 from app.board_space.abstract import SpaceColor
 from app.board_space.property.impl import AttackEffectType
 from app.chance_card.abstract import ChanceCard, ChanceCardType
-from app.game.impl import Game
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.game.impl import Game
 
 # 외계인 침공
 # 대상 색상의 모든 도시 통행료 0 원 & 건물 기능 정지 (랜드마크는 면역)
@@ -11,7 +14,7 @@ class AlienInvasionCard(ChanceCard):
         self.duration = duration
         self.value = 0.0
 
-    def use(self, game: Game):
+    def use(self, game: 'Game'):
         target_color = SpaceColor.NONE # 대상 색상
         affected_city = [
             space for space in game.get_board().get_spaces()
