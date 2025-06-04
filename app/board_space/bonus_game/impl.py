@@ -8,18 +8,23 @@ class BonusGameSpace(BoardSpace):
         print(f"{player}님이 보너스 게임에 도착했습니다.")
         print("보너스 게임을 시작합니다.")
         
-        bet_options = [100_000, 200_000, 300_000]
+        bet_options = [100, 200, 300]
+
+        if player.get_cash().amount < min(bet_options):
+            print("현금이 부족하여 게임을 진행할 수 없습니다.")
+            return
+
         while True:
             try:
                 bet = int(input(f"배팅 금액을 선택하세요 {bet_options} : "))
-                if bet in bet_options and player.money >= bet:
+                if bet in bet_options and player.get_cash().amount >= bet:
                     break
                 else:
                     print("잘못된 금액이거나 잔액이 부족합니다.")
             except ValueError:
                 print("숫자를 입력하세요.")
 
-        player.money -= bet
+        player.get_cash().amount -= bet
         print(f"{bet}원을 배팅하셨습니다. 게임을 시작합니다.")
 
         rewards = [2, 4, 8] # 각 라운드의 보상 배수
@@ -28,7 +33,7 @@ class BonusGameSpace(BoardSpace):
             answer = input("동전의 앞/뒤를 맞춰보세요 (앞/뒤, stop 입력시 중단): ")
             if answer == "stop":
                 print("게임을 중단합니다.")
-                player.money += bet * rewards[round_num]
+                player.get_cash().amount += bet * rewards[round_num]
                 print(f"보상: {bet * rewards[round_num]}원 지급!")
                 return
             coin = random.choice(["앞", "뒤"])
@@ -36,7 +41,7 @@ class BonusGameSpace(BoardSpace):
             if answer == coin:
                 print("정답입니다!")
                 if round_num == 2:
-                    player.money += bet * rewards[round_num]
+                    player.get_cash().amount += bet * rewards[round_num]
                     print(f"최대 라운드 성공! 보상: {bet * rewards[round_num]}원 지급!")
                     return
             else:

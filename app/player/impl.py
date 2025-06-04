@@ -1,6 +1,4 @@
-from typing import Optional
-
-#from app.chance_card.abstract import ChanceCard
+from typing import Tuple
 from app.money.impl import Money
 
 
@@ -10,15 +8,30 @@ class Player:
     _asset: Money = Money.zero()
     _cash: Money = Money.zero()
     _turns_to_wait: int = 0
-    #_chance_card: Optional[ChanceCard] = None
     _on_island: bool = False
+    _color: Tuple[int, int, int]
+
+    # 미리 정의된 플레이어 색상들
+    PLAYER_COLORS = [
+        (255, 0, 0),  # 빨간색
+        (0, 0, 255),  # 파란색
+        (0, 255, 0),  # 초록색
+        (255, 255, 0),  # 노란색
+    ]
 
     def __init__(self, idx: int, name: str) -> None:
         self._idx = idx
         self._name = name
+        self._color = self.PLAYER_COLORS[idx % len(self.PLAYER_COLORS)]
 
     def __str__(self) -> str:
-        return f"{self._idx}번 플레이어({self._name})"
+        color_names = {
+            (255, 0, 0): "빨간색",
+            (0, 0, 255): "파란색",
+            (0, 255, 0): "초록색",
+            (255, 255, 0): "노란색"
+        }
+        return f"{color_names[self._color]} {self._idx}번 플레이어({self._name})"
 
     def get_name(self) -> str:
         return self._name
@@ -54,3 +67,7 @@ class Player:
 
     def receive(self, amount: Money):
         self._cash = self._cash + amount
+
+    def get_color(self) -> Tuple[int, int, int]:
+        return self._color
+

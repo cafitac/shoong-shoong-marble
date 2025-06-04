@@ -168,16 +168,16 @@ class PlayerSetupUI:
 
 
 def main():
-    try:
+    # try:
         setup_ui = PlayerSetupUI()
         game = setup_ui.run()
 
         if game:
             ui = GameUI()
             ui.run(game)
-    except Exception as e:
-        print(f"게임 실행 중 오류가 발생했습니다: {e}")
-        pygame.quit()
+    # except Exception as e:
+    #     print(f"게임 실행 중 오류가 발생했습니다: {e}")
+    #     pygame.quit()
 
 
 if __name__ == "__main__":
