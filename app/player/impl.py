@@ -33,6 +33,9 @@ class Player:
         }
         return f"{color_names[self._color]} {self._idx}번 플레이어({self._name})"
 
+    def get_idx(self) -> int:
+        return self._idx
+
     def get_name(self) -> str:
         return self._name
 
