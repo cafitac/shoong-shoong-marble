@@ -2,6 +2,7 @@ import csv
 from enum import Enum
 from typing import Optional
 from app.board_space.abstract import BoardSpace, SpaceColor
+from app.board_space.land_result import LandResult
 from app.player.impl import Player
 from app.money.impl import Money
 
@@ -74,17 +75,67 @@ class PropertySpace(BoardSpace):
         # 이벤트 카드 상태
         self._is_festival = False
 
-    def on_land(self, player: Player) -> tuple[str, list[str]]:
+    def on_land(self, player: Player) -> LandResult:
         if self._owner is None:
             #self.buy_land(player)
-            return f"{self.get_name()}에 별장을 건설할 수 있습니다.\n건설하시겠습니까?", ["BUILD", "PASS"]
+            def handle_choice(choice: str):
+                if choice == "BUILD":
+                    self.buy_land(player)
+                return None
+
+            return LandResult(
+                f"{self.get_name()}에 별장을 건설할 수 있습니다.\n건설하시겠습니까?",
+                ["BUILD", "PASS"],
+                handle_choice
+            )
         elif self._owner == player:
             #self.upgrade_building(player)
-            return f"{self.get_name()}은 당신의 소유지입니다.\n업그레이드 하시겠습니까?", ["UPGRADE", "PASS"]
+            def handle_choice(choice: str):
+                if choice == "UPGRADE":
+                    self.upgrade_building(player)
+                return None
+
+            return LandResult(
+                f"{self.get_name()}은 당신의 소유지입니다.\n업그레이드 하시겠습니까?",
+                ["UPGRADE", "PASS"],
+                handle_choice
+            )
         else:
             #self.pay_toll(player)
             #self.offer_acquisition(player)
-            return f"{self.get_name()}은(는) {self._owner.get_name()}의 소유입니다.\n통행료를 지불합니다.", ["OK"]
+            toll = self._building.calculate_toll()
+
+            def handle_toll_payment(choice: str):
+                if player.get_cash().amount >= toll.amount:
+                    player.spend(toll)
+                    self._owner.receive(toll)
+                    print(f"{player.get_name()}님이 {self.get_name()}의 통행료 {toll}를 지불했습니다.")
+
+                    def handle_acquire(choice2: str):
+                        if choice2 == "ACQUIRE":
+                            self.purchase_from_owner(player)
+                        else:
+                            print("인수를 포기했습니다.")
+                        return None
+
+                    return LandResult(
+                        f"{self.get_name()}을(를) 인수하시겠습니까?\n금액: {self._building.get_acquisition_cost().amount}만원",
+                        ["ACQUIRE", "DECLINE"],
+                        handle_acquire
+                    )
+                else:
+                    print(f"{player.get_name()}님이 통행료를 낼 수 없습니다.")
+                    return LandResult(
+                        f"{player.get_name()}님의 잔액이 부족하여 통행료를 낼 수 없습니다.\n(추가 파산처리 필요)",
+                        ["OK"],
+                        lambda choice: None
+                    )
+
+            return LandResult(
+                f"{self.get_name()}은(는) {self._owner.get_name()}의 소유입니다.\n통행료 {toll.amount}만원을 지불합니다.",
+                ["OK"],
+                handle_toll_payment
+            )
 
     def buy_land(self, player: Player):
         price = self._building.get_price()

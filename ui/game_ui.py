@@ -4,6 +4,7 @@ import time
 import pygame
 import math
 
+from app.board_space.land_result import LandResult
 from config.ui_config import UIConfig
 from constants import *
 from ui.board_renderer import BoardRenderer
@@ -187,21 +188,9 @@ class GameUI:
                 print(f"{current_player.get_name()}이 {self.total_steps}칸 이동 > {arrival_space.get_name()} 도착")
 
                 # 도착한 칸의 효과 발동
-                btn = pygame.Rect(250, 320, 100, 40)
                 result = arrival_space.on_land(current_player)
                 if result is not None:
-                    msg, actions = result
-                    buttons = []
-                    for action in actions:
-                        if action == "BUILD":
-                            buttons.append((BUTTON_LABELS[action], btn, lambda: arrival_space.buy_land(current_player)))
-                        elif action == "UPGRADE":
-                            buttons.append((BUTTON_LABELS[action], btn, lambda: arrival_space.upgrade_building(current_player)))
-                        elif action == "PASS":
-                            buttons.append((BUTTON_LABELS[action], btn, lambda: print("패스")))
-                        elif action == "OK":
-                            buttons.append((BUTTON_LABELS[action], btn, lambda: print("확인")))
-                    self.show_modal(message=msg, buttons=buttons)
+                    self.show_modal_result(result)
 
                 # 턴 매니저를 통해 다음 플레이어로 턴 전환
                 game.get_turn_manager().next()
@@ -223,8 +212,8 @@ class GameUI:
                 if self.modal_active:
                     for label, rect, callback in self.modal_buttons:
                         if rect.collidepoint(event.pos):
-                            callback()
                             self.modal_active = False
+                            callback()
                             break
                 else:
                     if self.dice_button and self.dice_button.is_clicked(
@@ -234,6 +223,27 @@ class GameUI:
 
                         # 주사위 굴리기 및 애니메이션 준비
                         self._handle_dice_roll(game)
+
+    def _handle_land_choice(self, result: LandResult, choice: str):
+        if result.callback:
+            next_result = result.callback(choice)
+            if isinstance(next_result, LandResult):
+                self.show_modal_result(next_result)
+            else:
+                self.modal_active = False
+        else:
+            self.modal_active = False
+
+    def show_modal_result(self, result: LandResult):
+        buttons = []
+
+        for action in result.actions:
+            def make_callback(act):
+                return lambda: self._handle_land_choice(result, act)
+
+            buttons.append((BUTTON_LABELS.get(action, action), None, make_callback(action)))
+
+        self.show_modal(result.message, buttons)
 
     def show_modal(self, message, buttons):
         self.modal_active = True

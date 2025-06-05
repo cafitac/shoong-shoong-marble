@@ -26,6 +26,7 @@ class Player:
         self._idx = idx
         self._name = name
         self._color = self.PLAYER_COLORS[idx % len(self.PLAYER_COLORS)]
+        self._cash = Money(1000)
 
     def __str__(self) -> str:
         color_names = {

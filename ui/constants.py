@@ -68,5 +68,7 @@ BUTTON_LABELS = {
     "BUILD": "건설",
     "UPGRADE": "업그레이드",
     "PASS": "패스",
-    "OK": "확인"
+    "OK": "확인",
+    "ACQUIRE": "인수",
+    "DECLINE": "거절"
 }
