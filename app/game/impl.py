@@ -1,6 +1,8 @@
 
 from app.board.impl import Board
 from app.board_space.abstract import BoardSpace
+from app.board_space.chance.impl import ChanceSpace
+from app.chance_card.deck import ChanceCardDeck
 from app.dice.dices import Dices
 from app.player.impl import Player
 from app.position_manager.impl import PositionManager
@@ -14,6 +16,7 @@ class Game:
     _turn_manager: TurnManager
     _position_manager: PositionManager
     _dices: Dices
+    _card_deck: ChanceCardDeck
 
     def __init__(self, players: list[Player]):
         self._board = self._create_board_from_file()
@@ -21,6 +24,10 @@ class Game:
         self._turn_manager = TurnManager(self._players)
         self._position_manager = PositionManager(self._board, self._players)
         self._dices = Dices(count=2)
+        self._card_deck = ChanceCardDeck()
+        for space in self._board.get_spaces():
+            if isinstance(space, ChanceSpace):
+                space.set_deck(self)
 
     def _create_board_from_file(self) -> Board:
         spaces_data = []
@@ -52,3 +59,9 @@ class Game:
 
     def draw_board(self) -> None:
         pass
+
+    def get_card_deck(self) -> ChanceCardDeck:
+        return self._card_deck
+
+    def set_card_deck(self, deck: ChanceCardDeck) -> None:
+        self._card_deck = deck

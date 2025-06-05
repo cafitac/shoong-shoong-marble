@@ -1,6 +1,9 @@
 from app.chance_card.abstract import ChanceCard, ChanceCardType
 from app.board_space.property.impl import AttackEffectType
-from app.game.impl import Game
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.game.impl import Game
 
 # 정전
 # 지정 도시 통행료 0 원(일정 턴)
@@ -10,7 +13,7 @@ class BlackoutCard(ChanceCard):
         self.duration = duration
         self.value = 0.0
 
-    def use(self, game: Game):
+    def use(self, game: 'Game'):
         target_city = game.get_board().get_city(1) # 지정 도시
 
         # 랜드마크일 경우

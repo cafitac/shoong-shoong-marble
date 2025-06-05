@@ -4,7 +4,7 @@ from typing import List, Optional
 from app.chance_card.abstract import ChanceCard
 
 from app.chance_card.attack import *
-from app.chance_card.defence import *
+#from app.chance_card.defence import *
 from app.chance_card.event import *
 
 
@@ -16,22 +16,22 @@ class ChanceCardDeck:
 
     def initial_cards(self) -> list[ChanceCard]:
         return [
-            AlienInvasionCard(),
-            BlackoutCard(),
-            CityChangeCard(),
-            CityDonationCard(),
-            EarthquakeCard(),
-            ForceTaxCard(),
-            ForcedCitySaleCard(),
-            InfectiousDiseaseCard(),
-            YellowDustCard(),
-            AngelCard(),
-            DiscountCouponCard(),
-            IslandEscapeCard(),
-            ShieldCard(),
-            TollFreeCard(),
+            # AlienInvasionCard(),
+            # BlackoutCard(),
+            # CityChangeCard(),
+            # CityDonationCard(),
+            # EarthquakeCard(),
+            # ForceTaxCard(),
+            # ForcedCitySaleCard(),
+            # InfectiousDiseaseCard(),
+            # YellowDustCard(),
+            # AngelCard(),
+            # DiscountCouponCard(),
+            # IslandEscapeCard(),
+            # ShieldCard(),
+            # TollFreeCard(),
+            #FestivalCard(),
             DesertIslandMoveCard(),
-            FestivalCard(),
             StartMoveCard(),
             TaxPenaltyCard(),
             WorldTravelCard()

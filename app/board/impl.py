@@ -68,3 +68,12 @@ class Board:
 
     def get_space_count(self) -> int:
         return len(self._spaces)
+
+    def get_nearest_space_by_type(self, current_index: int, space_cls: type) -> BoardSpace:
+        space_count = len(self._spaces)
+        for offset in range(1, space_count + 1):
+            next_index = (current_index + offset) % space_count
+            space = self._spaces[next_index]
+            if isinstance(space, space_cls):
+                return space
+        return None

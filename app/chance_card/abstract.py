@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any
-from app.game.impl import Game
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.game.impl import Game
 
 class ChanceCardType(Enum):
     INSTANT = 0
@@ -14,5 +16,5 @@ class ChanceCard(ABC):
         self.description = description
 
     @abstractmethod
-    def use(self, game: Game) -> Any:
+    def use(self, game: 'Game') -> Any:
         ...
