@@ -45,6 +45,12 @@ class GameUI:
         self.animation_delay = 1  # 주사위 결과 후 2초 대기
         self.step_interval = 0.5  # 1초 간격으로 이동
 
+        # 모달 관련 속성 추가
+        self.modal_active = False  # 모달 표시 여부
+        self.modal_callback = None  # 모달 콜백 함수
+        self.modal_message = "" # 모달 메세지
+        self.modal_buttons = []
+
     def _init_fonts(self):
         try:
             fonts = {
@@ -181,7 +187,21 @@ class GameUI:
                 print(f"{current_player.get_name()}이 {self.total_steps}칸 이동 > {arrival_space.get_name()} 도착")
 
                 # 도착한 칸의 효과 발동
-                arrival_space.on_land(current_player)
+                btn = pygame.Rect(250, 320, 100, 40)
+                result = arrival_space.on_land(current_player)
+                if result is not None:
+                    msg, actions = result
+                    buttons = []
+                    for action in actions:
+                        if action == "BUILD":
+                            buttons.append((BUTTON_LABELS[action], btn, lambda: arrival_space.buy_land(current_player)))
+                        elif action == "UPGRADE":
+                            buttons.append((BUTTON_LABELS[action], btn, lambda: arrival_space.upgrade_building(current_player)))
+                        elif action == "PASS":
+                            buttons.append((BUTTON_LABELS[action], btn, lambda: print("패스")))
+                        elif action == "OK":
+                            buttons.append((BUTTON_LABELS[action], btn, lambda: print("확인")))
+                    self.show_modal(message=msg, buttons=buttons)
 
                 # 턴 매니저를 통해 다음 플레이어로 턴 전환
                 game.get_turn_manager().next()
@@ -200,13 +220,74 @@ class GameUI:
                 self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
                 self._update_dice_button_position(event.w, event.h)
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if self.dice_button and self.dice_button.is_clicked(
-                        event.pos) and self.dice_button.enabled and self.animation_state is None:
-                    # 버튼 비활성화
-                    self.dice_button.enabled = False
+                if self.modal_active:
+                    for label, rect, callback in self.modal_buttons:
+                        if rect.collidepoint(event.pos):
+                            callback()
+                            self.modal_active = False
+                            break
+                else:
+                    if self.dice_button and self.dice_button.is_clicked(
+                            event.pos) and self.dice_button.enabled and self.animation_state is None:
+                        # 버튼 비활성화
+                        self.dice_button.enabled = False
 
-                    # 주사위 굴리기 및 애니메이션 준비
-                    self._handle_dice_roll(game)
+                        # 주사위 굴리기 및 애니메이션 준비
+                        self._handle_dice_roll(game)
+
+    def show_modal(self, message, buttons):
+        self.modal_active = True
+        self.modal_message = message
+        self.modal_buttons = buttons
+
+    def draw_modal(self):
+        screen_width, screen_height = self.screen.get_size()
+
+        # 반투명 배경
+        overlay = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 128))
+        self.screen.blit(overlay, (0, 0))
+
+        # 모달 박스 크기 및 위치 계산 (가로 50%, 세로 33%)
+        modal_width = screen_width * 0.5
+        modal_height = screen_height * 0.33
+        modal_x = (screen_width - modal_width) / 2
+        modal_y = (screen_height - modal_height) / 2
+        modal_rect = pygame.Rect(modal_x, modal_y, modal_width, modal_height)
+
+        # 모달 박스 그리기
+        pygame.draw.rect(self.screen, (255, 255, 255), modal_rect, border_radius=10)
+        pygame.draw.rect(self.screen, (0, 0, 0), modal_rect, 2)
+
+        # 메시지 출력
+        lines = self.modal_message.split('\n')
+        for i, line in enumerate(lines):
+            label = self.fonts["main"].render(line, True, (0, 0, 0))
+            text_x = modal_rect.x + 20
+            text_y = modal_rect.y + 20 + i * 30
+            self.screen.blit(label, (text_x, text_y))
+
+        # 버튼들 배치 (두 개 기준, 가운데 정렬)
+        button_width = 120
+        button_height = 40
+        button_spacing = 40
+
+        total_button_width = (button_width * len(self.modal_buttons)) + (button_spacing * (len(self.modal_buttons) - 1))
+        start_x = (screen_width - total_button_width) / 2
+        button_y = modal_rect.bottom - 60
+
+        for i, (label, _, callback) in enumerate(self.modal_buttons):
+            btn_x = start_x + i * (button_width + button_spacing)
+            rect = pygame.Rect(btn_x, button_y, button_width, button_height)
+            pygame.draw.rect(self.screen, (180, 180, 180), rect)
+            pygame.draw.rect(self.screen, (0, 0, 0), rect, 2)
+
+            text = self.fonts["main"].render(label, True, (0, 0, 0))
+            text_rect = text.get_rect(center=rect.center)
+            self.screen.blit(text, text_rect)
+
+            # 버튼 rect를 업데이트
+            self.modal_buttons[i] = (label, rect, callback)
 
     def run(self, game):
         # game 객체를 _init_board_renderer에 전달
@@ -259,6 +340,10 @@ class GameUI:
                 player_turn_label = self.fonts["main"].render(player_turn_text, True, COLOR_WHITE)
                 player_turn_rect = player_turn_label.get_rect(center=(current_w / 2, (current_h / 2) - 50))
                 self.screen.blit(player_turn_label, player_turn_rect)
+
+            # 모달 표시
+            if self.modal_active:
+                self.draw_modal()
 
             pygame.display.flip()
             self.clock.tick(60)

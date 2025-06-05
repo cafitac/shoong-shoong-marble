@@ -62,3 +62,11 @@ CORNER_POSITIONS = [
     (BOARD_EDGES['left'] + CORNER_SIDE / 2, BOARD_EDGES['top'] + CORNER_SIDE / 2),  # 좌상단
     (BOARD_EDGES['right'] - CORNER_SIDE / 2, BOARD_EDGES['top'] + CORNER_SIDE / 2)  # 우상단
 ]
+
+# 버튼 라벨
+BUTTON_LABELS = {
+    "BUILD": "건설",
+    "UPGRADE": "업그레이드",
+    "PASS": "패스",
+    "OK": "확인"
+}
