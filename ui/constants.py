@@ -70,5 +70,7 @@ BUTTON_LABELS = {
     "PASS": "패스",
     "OK": "확인",
     "ACQUIRE": "인수",
-    "DECLINE": "거절"
+    "DECLINE": "거절",
+    "DISCARD": "버리기",
+    "REPLACE": "교체"
 }
