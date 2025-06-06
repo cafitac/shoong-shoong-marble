@@ -190,7 +190,11 @@ class GameUI:
                 # 도착한 칸의 효과 발동
                 result = arrival_space.on_land(current_player)
                 if result is not None:
-                    self.show_modal_result(result)
+                    self.show_modal_result(
+                        result,
+                        on_complete=lambda: self.board_renderer.update_block_by_seq(
+                            position_manager.get_position(current_player))
+                    )
 
                 # 턴 매니저를 통해 다음 플레이어로 턴 전환
                 game.get_turn_manager().next()
@@ -224,24 +228,25 @@ class GameUI:
                         # 주사위 굴리기 및 애니메이션 준비
                         self._handle_dice_roll(game)
 
-    def _handle_land_choice(self, result: LandResult, choice: str):
-        if result.callback:
-            next_result = result.callback(choice)
-            if isinstance(next_result, LandResult):
-                self.show_modal_result(next_result)
-            else:
-                self.modal_active = False
-        else:
-            self.modal_active = False
-
-    def show_modal_result(self, result: LandResult):
+    def show_modal_result(self, result: LandResult, on_complete=None):
         buttons = []
 
-        for action in result.actions:
-            def make_callback(act):
-                return lambda: self._handle_land_choice(result, act)
+        def handle_choice(choice):
+            if result.callback:
+                next_result = result.callback(choice)
+                if isinstance(next_result, LandResult):
+                    self.show_modal_result(next_result, on_complete)  # 재귀로 넘겨줌
+                else:
+                    self.modal_active = False
+                    if on_complete:
+                        on_complete()
+            else:
+                self.modal_active = False
+                if on_complete:
+                    on_complete()
 
-            buttons.append((BUTTON_LABELS.get(action, action), None, make_callback(action)))
+        for action in result.actions:
+            buttons.append((BUTTON_LABELS.get(action, action), None, lambda act=action: handle_choice(act)))
 
         self.show_modal(result.message, buttons)
 
