@@ -50,7 +50,9 @@ class GameUI:
         self.modal_active = False  # 모달 표시 여부
         self.modal_callback = None  # 모달 콜백 함수
         self.modal_message = "" # 모달 메세지
-        self.modal_buttons = []
+        self.modal_buttons = [] # 모달 버튼
+        self.modal_input_text = ""  # 사용자 입력 텍스트
+        self.modal_is_prompt = False  # 입력 모달 여부
 
     def _init_fonts(self):
         try:
@@ -212,12 +214,29 @@ class GameUI:
             elif event.type == pygame.VIDEORESIZE:
                 self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
                 self._update_dice_button_position(event.w, event.h)
+            elif event.type == pygame.KEYDOWN and self.modal_active and self.modal_is_prompt:
+                if event.key == pygame.K_BACKSPACE:
+                    self.modal_input_text = self.modal_input_text[:-1]
+                elif event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
+                    if self.modal_buttons:
+                        _, _, callback = self.modal_buttons[0]
+                        self.modal_active = False
+                        self.modal_is_prompt = False
+                        callback(self.modal_input_text)
+                else:
+                    # 일반 문자 입력
+                    if len(event.unicode) == 1 and event.unicode.isprintable():
+                        self.modal_input_text += event.unicode
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if self.modal_active:
                     for label, rect, callback in self.modal_buttons:
                         if rect.collidepoint(event.pos):
                             self.modal_active = False
-                            callback()
+                            if self.modal_is_prompt:
+                                self.modal_is_prompt = False
+                                callback(self.modal_input_text)
+                            else:
+                                callback()
                             break
                 else:
                     if self.dice_button and self.dice_button.is_clicked(
@@ -248,12 +267,22 @@ class GameUI:
         for action in result.actions:
             buttons.append((BUTTON_LABELS.get(action, action), None, lambda act=action: handle_choice(act)))
 
-        self.show_modal(result.message, buttons)
+        if result.is_prompt:
+            self.show_input_modal(result.message, buttons)
+        else:
+            self.show_modal(result.message, buttons)
 
     def show_modal(self, message, buttons):
         self.modal_active = True
         self.modal_message = message
         self.modal_buttons = buttons
+
+    def show_input_modal(self, message, buttons):
+        self.modal_active = True
+        self.modal_message = message
+        self.modal_buttons = buttons
+        self.modal_input_text = ""
+        self.modal_is_prompt = True
 
     def draw_modal(self):
         screen_width, screen_height = self.screen.get_size()
@@ -281,6 +310,19 @@ class GameUI:
             text_x = modal_rect.x + 20
             text_y = modal_rect.y + 20 + i * 30
             self.screen.blit(label, (text_x, text_y))
+
+        if self.modal_is_prompt:
+            input_box_width = modal_rect.width - 40
+            input_box_height = 40
+            input_box_x = modal_rect.x + 20
+            input_box_y = modal_rect.y + 20 + len(lines) * 30 + 10
+
+            input_box = pygame.Rect(input_box_x, input_box_y, input_box_width, input_box_height)
+            pygame.draw.rect(self.screen, (255, 255, 255), input_box)
+            pygame.draw.rect(self.screen, (0, 0, 0), input_box, 2)
+
+            input_surface = self.fonts["main"].render(self.modal_input_text, True, (0, 0, 0))
+            self.screen.blit(input_surface, (input_box.x + 5, input_box.y + 5))
 
         # 버튼들 배치 (두 개 기준, 가운데 정렬)
         button_width = 120
