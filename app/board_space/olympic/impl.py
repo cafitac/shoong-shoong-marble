@@ -1,4 +1,5 @@
 from app.board_space.abstract import BoardSpace
+from app.board_space.land_result import LandResult
 from app.player.impl import Player
 from app.board_space.property.impl import PropertySpace
 
@@ -14,8 +15,10 @@ class OlympicSpace(BoardSpace):
             if isinstance(space, PropertySpace) and space._owner == player
         ]
         if not owned_properties:
-            print("소유한 도시가 없습니다.")
-            return
+            return LandResult(
+                message="소유한 도시가 없습니다.",
+                actions=["확인"]
+            )
 
         # 2. 도시 목록 출력
         for idx, prop in enumerate(owned_properties):
@@ -23,18 +26,49 @@ class OlympicSpace(BoardSpace):
             print(f"{idx}: {name}")
 
         # 3. 플레이어가 올림픽 개최 도시 선택
-        try:
-            choice = int(input("올림픽을 개최할 도시 번호를 선택하세요: "))
-            selected_prop = owned_properties[choice]
-        except (ValueError, IndexError):
-            print("잘못된 선택입니다.")
-            return
+        # try:
+        #     choice = int(input("올림픽을 개최할 도시 번호를 선택하세요: "))
+        #     selected_prop = owned_properties[choice]
+        # except (ValueError, IndexError):
+        #     print("잘못된 선택입니다.")
+        #     return
+        return LandResult(
+            message=f"올림픽을 개최할 도시 번호를 입력하세요:",
+            actions=["확인"],
+            callback=lambda input_text: self._handle_city_selection(player, input_text, owned_properties),
+            is_prompt=True
+        )
 
-        # 4. 기존 올림픽 도시 플래그 해제 (전체 board_spaces에서)
+        # # 4. 기존 올림픽 도시 플래그 해제 (전체 board_spaces에서)
+        # for space in getattr(player, "board_spaces", []):
+        #     if isinstance(space, PropertySpace):
+        #         space.olympic = False
+        #
+        # # 5. 선택한 도시에 올림픽 플래그 설정
+        # selected_prop.olympic = True
+        # print(f"{getattr(selected_prop, '_name', '도시')}에서 올림픽이 개최되었습니다! 통행료가 2배로 증가합니다.")
+
+    def _handle_city_selection(self, player: Player, input_text: str, properties: list[PropertySpace]):
+        try:
+            idx = int(input_text.strip())
+            selected_prop = properties[idx]
+        except (ValueError, IndexError):
+            return LandResult(
+                message=f"잘못된 입력입니다.\n올림픽을 개최할 도시 번호를 입력하세요:",
+                actions=["확인"],
+                callback=lambda input_text1: self._handle_city_selection(player, input_text1, properties),
+                is_prompt=True
+            )
+
+        # 기존 올림픽 도시 플래그 해제 (전체 board_spaces에서)
         for space in getattr(player, "board_spaces", []):
             if isinstance(space, PropertySpace):
                 space.olympic = False
 
-        # 5. 선택한 도시에 올림픽 플래그 설정
+        # 선택한 도시에 올림픽 플래그 설정
         selected_prop.olympic = True
-        print(f"{getattr(selected_prop, '_name', '도시')}에서 올림픽이 개최되었습니다! 통행료가 2배로 증가합니다.")
+
+        return LandResult(
+            message=f"{getattr(selected_prop, '_name', '도시')}에서 올림픽이 개최되었습니다! 통행료가 2배로 증가합니다.",
+            actions=["확인"]
+        )

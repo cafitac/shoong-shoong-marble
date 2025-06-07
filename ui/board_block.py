@@ -32,6 +32,7 @@ class BoardBlock:
 
         if isinstance(self.space, PropertySpace):
             building = self.space.get_building()
+            building.calculate_toll()
             texts['level'] = str(building.get_level()) if building else ''
             texts['price'] = str(building.get_price()) if building else ''
 
@@ -183,3 +184,6 @@ class BoardBlock:
         self._draw_upper_part(surface, center_x, center_y, angle)
         self._draw_lower_part(surface, center_x, center_y, angle)
         self._draw_texts(surface, center_x, center_y, angle)
+
+    def update_text(self):
+        self.texts = self._init_texts()

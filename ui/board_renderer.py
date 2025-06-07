@@ -244,3 +244,35 @@ class BoardRenderer:
         scaled_width = max(10, int(board_surface.get_width() * scale_factor))
         scaled_height = max(10, int(board_surface.get_height() * scale_factor))
         return pygame.transform.smoothscale(board_surface, (scaled_width, scaled_height))
+
+    def update_block_by_seq(self, seq: int):
+        center_x, center_y, angle = 0, 0, 0
+        if 1 <= seq <= 7:
+            index = seq - 1
+            block = self.left_line_blocks[index]
+            center_x = BOARD_EDGES['left'] + CELL_LONG / 2
+            center_y = BOARD_EDGES['bottom'] - CORNER_SIDE - (CELL_SHORT * index) - CELL_SHORT / 2
+            angle = 90
+        elif 9 <= seq <= 15:
+            index = seq - 9
+            block = self.top_line_blocks[index]
+            center_x = BOARD_EDGES['left'] + CORNER_SIDE + (CELL_SHORT * index) + CELL_SHORT / 2
+            center_y = BOARD_EDGES['top'] + CELL_LONG / 2
+            angle = 0
+        elif 17 <= seq <= 23:
+            index = seq - 17
+            block = self.right_line_blocks[index]
+            center_x = BOARD_EDGES['right'] - CELL_LONG / 2
+            center_y = BOARD_EDGES['top'] + CORNER_SIDE + (CELL_SHORT * index) + CELL_SHORT / 2
+            angle = 90
+        elif 25 <= seq <= 31:
+            index = seq - 25
+            block = self.bottom_line_blocks[index]
+            center_x = BOARD_EDGES['right'] - CORNER_SIDE - (CELL_SHORT * index) - CELL_SHORT / 2
+            center_y = BOARD_EDGES['bottom'] - CELL_LONG / 2
+            angle = 0
+        else:
+            return
+
+        block.update_text()
+        block.draw(self.board_surface, center_x, center_y, angle)
