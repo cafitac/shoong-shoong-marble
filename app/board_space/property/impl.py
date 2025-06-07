@@ -33,8 +33,11 @@ class Building:
     def get_acquisition_cost(self) -> Money:
         return self._base_price * 2
 
-    def calculate_toll(self) -> Money:
-        return self._base_price * (0.2 + 0.2 * self._level)
+    def calculate_toll(self, is_festival = False) -> Money:
+        toll = self._base_price * (0.2 + 0.2 * self._level)
+        if is_festival:
+            toll *= 2
+        return toll
 
 
 # 건물 가격 정보 연동 로직
@@ -103,7 +106,7 @@ class PropertySpace(BoardSpace):
         else:
             #self.pay_toll(player)
             #self.offer_acquisition(player)
-            toll = self._building.calculate_toll()
+            toll = self._building.calculate_toll(self._is_festival)
 
             def handle_toll_payment(choice: str):
                 if player.get_cash().amount >= toll.amount:
@@ -171,7 +174,7 @@ class PropertySpace(BoardSpace):
             print(f"{building_name} 건설 비용이 부족합니다.")
 
     def pay_toll(self, player: Player):
-        toll = self._building.calculate_toll()
+        toll = self._building.calculate_toll(self._is_festival)
         if player.get_cash().amount >= toll.amount:
             player.spend(toll)
             self._owner.receive(toll)
