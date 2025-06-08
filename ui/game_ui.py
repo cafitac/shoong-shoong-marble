@@ -197,6 +197,8 @@ class GameUI:
                             position_manager.get_position(current_player))
                     )
 
+                # 공격 카드 턴 감소
+                game.get_turn_manager().reduce_duration(game.get_board().get_spaces())
                 # 턴 매니저를 통해 다음 플레이어로 턴 전환
                 game.get_turn_manager().next()
 
@@ -256,10 +258,14 @@ class GameUI:
                     self.show_modal_result(next_result, on_complete)  # 재귀로 넘겨줌
                 else:
                     self.modal_active = False
+                    if result.on_complete_seq is not None:
+                        self.board_renderer.update_block_by_seq(result.on_complete_seq)
                     if on_complete:
                         on_complete()
             else:
                 self.modal_active = False
+                if result.on_complete_seq is not None:
+                    self.board_renderer.update_block_by_seq(result.on_complete_seq)
                 if on_complete:
                     on_complete()
 

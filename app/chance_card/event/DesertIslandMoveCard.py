@@ -20,4 +20,4 @@ class DesertIslandMoveCard(ChanceCard):
 
         print(f"{player.get_name()} 무인도로 이동")
 
-        return True
+        return island_space.on_land(player)

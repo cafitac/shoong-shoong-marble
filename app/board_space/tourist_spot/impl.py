@@ -60,3 +60,5 @@ class TouristSpotSpace(BoardSpace):
         else:
             print(f"{player}님은 돈이 부족하여 {self._name}을 구매할 수 없습니다.")
 
+    def get_owner(self) -> Player:
+        return self._owner

@@ -1,4 +1,6 @@
 # 이 파일은 턴 관리를 담당하는 TurnManager 클래스를 구현합니다.
+from app.board_space.abstract import BoardSpace
+from app.board_space.property.impl import PropertySpace
 from app.player.impl import Player
 
 
@@ -11,6 +13,10 @@ class TurnManager:
     def get_current_player(self) -> Player:
         """현재 턴의 플레이어를 반환합니다."""
         return self._players[self._current_player_index]
+
+    def get_prev_player(self) -> Player:
+        """이전 턴의 플레이어를 반환합니다."""
+        return self._players[self._current_player_index - 1]
 
     def next(self) -> Player:
         """다음 플레이어로 턴을 넘깁니다."""
@@ -52,3 +58,11 @@ class TurnManager:
             player.leave_island()  # 턴 차단 해제
             self._skipped_players.remove(player)
             print(f"{player.get_name()}의 턴 스킵이 해제되었습니다.")
+
+    def reduce_duration(self, city_spaces: list[BoardSpace]):
+        """
+        공격 효과를 받은 도시의 기간 감소
+        """
+        for space in city_spaces:
+            if isinstance(space, PropertySpace):
+                space.reduce_attack_effect_duration()

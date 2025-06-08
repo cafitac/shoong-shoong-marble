@@ -17,24 +17,24 @@ class ChanceCardDeck:
     def initial_cards(self) -> list[ChanceCard]:
         return [
             # AlienInvasionCard(),
-            # BlackoutCard(),
+             BlackoutCard(),
             # CityChangeCard(),
             # CityDonationCard(),
-            # EarthquakeCard(),
+             EarthquakeCard(),
             # ForceTaxCard(),
-            # ForcedCitySaleCard(),
+             ForcedCitySaleCard(),
             # InfectiousDiseaseCard(),
-            # YellowDustCard(),
+             YellowDustCard(),
             # AngelCard(),
             # DiscountCouponCard(),
             # IslandEscapeCard(),
             # ShieldCard(),
             # TollFreeCard(),
-            #FestivalCard(),
-            DesertIslandMoveCard(),
-            StartMoveCard(),
-            TaxPenaltyCard(),
-            WorldTravelCard()
+             FestivalCard(),
+             DesertIslandMoveCard(),
+             StartMoveCard(),
+             TaxPenaltyCard(),
+             WorldTravelCard()
         ]
 
     def draw(self) -> Optional[ChanceCard]:

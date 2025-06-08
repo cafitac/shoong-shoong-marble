@@ -191,3 +191,5 @@ class BoardBlock:
         if isinstance(self.space, PropertySpace) or isinstance(self.space, TouristSpotSpace):
             if self.space.get_owner() is not None:
                 self.property_color = self.space.get_owner().get_color()
+            else:
+                self.property_color = self._get_property_color()
