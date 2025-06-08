@@ -3,8 +3,8 @@ from app.game.impl import Game
 from app.player.impl import Player
 from config.ui_config import UIConfig
 from game.states import GameState
-from game_ui import GameUI
-from constants import *
+from ui.game_ui import GameUI
+from ui.constants import *
 from ui.components.button import Button
 from ui.components.input_field import InputField
 
@@ -178,7 +178,3 @@ def main():
     except Exception as e:
         print(f"게임 실행 중 오류가 발생했습니다: {e}")
         pygame.quit()
-
-
-if __name__ == "__main__":
-    main()
