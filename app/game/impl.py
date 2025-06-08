@@ -1,3 +1,4 @@
+from pathlib import Path
 
 from app.board.impl import Board
 from app.board_space.abstract import BoardSpace
@@ -8,6 +9,8 @@ from app.player.impl import Player
 from app.position_manager.impl import PositionManager
 from app.turn_manager.impl import TurnManager
 import csv
+
+from utils.file_loader import get_board_space_data
 
 
 class Game:
@@ -30,10 +33,7 @@ class Game:
                 space.set_deck(self)
 
     def _create_board_from_file(self) -> Board:
-        spaces_data = []
-        with open('board_space_data.csv', 'r', encoding='utf-8') as file:
-            csv_reader = csv.DictReader(file)
-            spaces_data = list(csv_reader)
+        spaces_data = get_board_space_data()
         return Board.create_from_data(spaces_data)
 
     def get_players(self) -> list[Player]:
