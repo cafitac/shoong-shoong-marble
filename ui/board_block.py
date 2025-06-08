@@ -3,6 +3,7 @@ import math
 
 from app.board_space.abstract import BoardSpace, SpaceColor
 from app.board_space.property.impl import PropertySpace
+from app.board_space.tourist_spot.impl import TouristSpotSpace
 
 
 class BoardBlock:
@@ -32,6 +33,7 @@ class BoardBlock:
 
         if isinstance(self.space, PropertySpace):
             building = self.space.get_building()
+            building.calculate_toll()
             texts['level'] = str(building.get_level()) if building else ''
             texts['price'] = str(building.get_price()) if building else ''
 
@@ -48,11 +50,11 @@ class BoardBlock:
             SpaceColor.LIGHT_GREEN: (144, 238, 144),  # 연한 녹색
             SpaceColor.GREEN: (0, 128, 0),  # 녹색
             SpaceColor.LIGHT_BLUE: (173, 216, 230),  # 연한 파란색
-            SpaceColor.BLUE: (0, 0, 255),  # 파란색
+            SpaceColor.BLUE: (102, 178, 255),  # 파란색
             SpaceColor.PINK: (255, 182, 193),  # 분홍색
             SpaceColor.PURPLE: (128, 0, 128),  # 보라색
             SpaceColor.ORANGE: (255, 165, 0),  # 주황색
-            SpaceColor.RED: (255, 0, 0)  # 빨간색
+            SpaceColor.RED: (255, 102, 102)  # 빨간색
         }
 
         return color_map.get(space_color)
@@ -183,3 +185,9 @@ class BoardBlock:
         self._draw_upper_part(surface, center_x, center_y, angle)
         self._draw_lower_part(surface, center_x, center_y, angle)
         self._draw_texts(surface, center_x, center_y, angle)
+
+    def update_text(self):
+        self.texts = self._init_texts()
+        if isinstance(self.space, PropertySpace) or isinstance(self.space, TouristSpotSpace):
+            if self.space.get_owner() is not None:
+                self.property_color = self.space.get_owner().get_color()

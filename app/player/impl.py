@@ -13,6 +13,7 @@ class Player:
     _on_island: bool = False
     _color: Tuple[int, int, int]
     _card: ChanceCard = None
+    _world_travel_ticket = False
 
     # 미리 정의된 플레이어 색상들
     PLAYER_COLORS = [
@@ -26,6 +27,7 @@ class Player:
         self._idx = idx
         self._name = name
         self._color = self.PLAYER_COLORS[idx % len(self.PLAYER_COLORS)]
+        self._cash = Money(1000)
 
     def __str__(self) -> str:
         color_names = {

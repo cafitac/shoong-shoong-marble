@@ -1,30 +1,62 @@
 from typing import Optional
 
-from app.board_space.abstract import BoardSpace, SpaceColor
+from app.board_space.abstract import BoardSpace
+from app.board_space.land_result import LandResult
 from app.money.impl import Money
 from app.player.impl import Player
 
 
 class TouristSpotSpace(BoardSpace):
-    def __init__(self, seq: int, name: str, price: Money, color: Optional[SpaceColor] = None):
-        super().__init__(seq, name, color)
+    def __init__(self, seq: int, name: str, price: Money):
+        super().__init__(seq, name)
         self._name = name
         self._owner: Optional[Player] = None
-        self._price = price
-
-        # 이벤트 카드 상태
-        self._is_festival = False
+        self._base_price = price
 
     def on_land(self, player: Player):
-        print(f"{player}님이 세계여행에 도착했습니다. 10만 마블을 지불하고 세계여행을 할 수 있습니다.")
-        print("다음 자신의 차례에 주사위를 던지지 않고 원하는 지역으로 바로 이동할 수 있습니다.")
+        print(f"{player}님이 관광지에 도착했습니다. 관광지를 방문합니다.")
+        if self._owner is None:
+            def handle_choice(choice: str):
+                if choice == "BUILD":
+                    self.buy_land(player)
+                return None
 
-        travel_fee = Money(100_000)
-        if player.get_cash() >= travel_fee:
-            player.spend(travel_fee)
-            # TODO : 플레이어에게 세계여행 플래그 부여? (ex: player.world_travel_ticket = True)
-            # TODO : 실제 ui 상 세계 여행지 선택 및 이동할 수 있는 로직 구현이 필요합니다.
-            setattr(player, "world_travel_ticket", True)
-            print("세계여행권을 획득했습니다!")
+            return LandResult(
+                f"{self.get_name()}에 도착했습니다.\n구매하시겠습니까?",
+                ["BUILD", "PASS"],
+                handle_choice
+            )
+        elif self._owner == player:
+            #self.upgrade_building(player)
+            return None
         else:
-            print("현금이 부족하여 세계여행을 할 수 없습니다.")
+            toll = self._base_price
+
+            def handle_toll_payment(choice: str):
+                if player.get_cash().amount >= toll.amount:
+                    player.spend(toll)
+                    self._owner.receive(toll)
+                    return None
+                else:
+                    print(f"{player.get_name()}님이 통행료를 낼 수 없습니다.")
+                    return LandResult(
+                        f"{player.get_name()}님의 잔액이 부족하여 통행료를 낼 수 없습니다.\n(추가 파산처리 필요)",
+                        ["OK"],
+                        lambda _: None
+                    )
+
+            return LandResult(
+                f"{self.get_name()}은(는) {self._owner.get_name()}의 소유입니다.\n통행료 {toll.amount}만원을 지불합니다.",
+                ["OK"],
+                handle_toll_payment
+            )
+
+    def buy_land(self, player: Player):
+        price = self._base_price
+        if player.get_cash().amount >= price.amount:
+            player.spend(price)
+            self._owner = player
+            print(f"{player}님이 {self._name}을 구매했습니다!")
+        else:
+            print(f"{player}님은 돈이 부족하여 {self._name}을 구매할 수 없습니다.")
+
