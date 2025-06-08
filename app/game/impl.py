@@ -3,6 +3,8 @@ from pathlib import Path
 from app.board.impl import Board
 from app.board_space.abstract import BoardSpace
 from app.board_space.chance.impl import ChanceSpace
+from app.board_space.olympic.impl import OlympicSpace
+from app.board_space.tax_office.impl import TaxOfficeSpace
 from app.chance_card.deck import ChanceCardDeck
 from app.dice.dices import Dices
 from app.player.impl import Player
@@ -31,6 +33,8 @@ class Game:
         for space in self._board.get_spaces():
             if isinstance(space, ChanceSpace):
                 space.set_deck(self)
+            if isinstance(space, OlympicSpace) or isinstance(space, TaxOfficeSpace):
+                space.set_board_spaces(self._board.get_spaces())
 
     def _create_board_from_file(self) -> Board:
         spaces_data = get_board_space_data()
