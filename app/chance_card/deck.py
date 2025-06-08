@@ -22,7 +22,7 @@ class ChanceCardDeck:
             # CityDonationCard(),
             # EarthquakeCard(),
             # ForceTaxCard(),
-            # ForcedCitySaleCard(),
+             ForcedCitySaleCard(),
             # InfectiousDiseaseCard(),
             # YellowDustCard(),
             # AngelCard(),
@@ -30,11 +30,11 @@ class ChanceCardDeck:
             # IslandEscapeCard(),
             # ShieldCard(),
             # TollFreeCard(),
-            #FestivalCard(),
-            DesertIslandMoveCard(),
-            StartMoveCard(),
-            TaxPenaltyCard(),
-            WorldTravelCard()
+            # FestivalCard(),
+            # DesertIslandMoveCard(),
+            # StartMoveCard(),
+            # TaxPenaltyCard(),
+            # WorldTravelCard()
         ]
 
     def draw(self) -> Optional[ChanceCard]:

@@ -23,11 +23,11 @@ class ChanceSpace(BoardSpace):
                    f"새 찬스 카드를 뽑습니다: {card.name} ({card.description})"
 
         if card.card_type == ChanceCardType.INSTANT: # 즉시 사용
-            card.use(self.game)
+            self.game.get_card_deck().discard(card)
             return LandResult(
                 card_msg + "\n이 카드는 즉시 발동됩니다.",
                 ["OK"],
-                lambda _: None
+                lambda _: card.use(self.game)
             )
         elif card.card_type == ChanceCardType.KEEP: # 보관 가능
             if player.get_card() is not None: # 갖고 있는 카드가 있을 경우 교체/버리기
