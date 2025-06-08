@@ -2,11 +2,10 @@
 import time
 
 import pygame
-import math
 
 from app.board_space.land_result import LandResult
 from config.ui_config import UIConfig
-from constants import *
+from ui.constants import *
 from ui.board_renderer import BoardRenderer
 from ui.player_panel import PlayerPanel
 from ui.components.button import Button
@@ -49,8 +48,8 @@ class GameUI:
         # 모달 관련 속성 추가
         self.modal_active = False  # 모달 표시 여부
         self.modal_callback = None  # 모달 콜백 함수
-        self.modal_message = "" # 모달 메세지
-        self.modal_buttons = [] # 모달 버튼
+        self.modal_message = ""  # 모달 메세지
+        self.modal_buttons = []  # 모달 버튼
         self.modal_input_text = ""  # 사용자 입력 텍스트
         self.modal_is_prompt = False  # 입력 모달 여부
 
