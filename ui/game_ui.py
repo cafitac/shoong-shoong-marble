@@ -4,6 +4,7 @@ import time
 import pygame
 
 from app.board_space.land_result import LandResult
+from app.board_space.property.impl import BuildingType, PropertySpace
 from config.ui_config import UIConfig
 from ui.constants import *
 from ui.board_renderer import BoardRenderer
@@ -255,17 +256,35 @@ class GameUI:
             if result.callback:
                 next_result = result.callback(choice)
                 if isinstance(next_result, LandResult):
-                    self.show_modal_result(next_result, on_complete)  # 재귀로 넘겨줌
+                    self.show_modal_result(next_result, on_complete)
                 else:
+                    # 모달 닫고 블록 업데이트
                     self.modal_active = False
+
+                    # result에 property가 있고, 그 property에 owner가 있으면 해당 블록을 업데이트
+                    if result.property and result.property.get_owner():
+                        position = result.property.get_seq()
+                        self.board_renderer.update_block_by_seq(position)
+
+                    # on_complete_seq가 있으면 해당 블록도 업데이트
                     if result.on_complete_seq is not None:
                         self.board_renderer.update_block_by_seq(result.on_complete_seq)
+
                     if on_complete:
                         on_complete()
             else:
+                # 모달 닫고 블록 업데이트
                 self.modal_active = False
+
+                # result에 property가 있고, 그 property에 owner가 있으면 해당 블록을 업데이트
+                if result.property and result.property.get_owner():
+                    position = result.property.get_seq()
+                    self.board_renderer.update_block_by_seq(position)
+
+                # on_complete_seq가 있으면 해당 블록도 업데이트
                 if result.on_complete_seq is not None:
                     self.board_renderer.update_block_by_seq(result.on_complete_seq)
+
                 if on_complete:
                     on_complete()
 

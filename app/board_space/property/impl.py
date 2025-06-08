@@ -6,6 +6,16 @@ from app.board_space.land_result import LandResult
 from app.player.impl import Player
 from app.money.impl import Money
 
+
+class BuildingType(Enum):
+    """모두의 마블 건물 타입을 나타내는 열거형 클래스입니다."""
+    NONE = 0  # 아무것도 건설되지 않은 상태
+    VILLA = 1  # 빌라
+    BUILDING = 2  # 빌딩
+    HOTEL = 3  # 호텔
+    LANDMARK = 4  # 랜드마크
+
+
 class Building:
     def __init__(self, base_price: Money):
         self._level = 0
@@ -33,7 +43,7 @@ class Building:
     def get_acquisition_cost(self) -> Money:
         return self._base_price * 2
 
-    def calculate_toll(self, is_festival = False, effect_value = 1.0) -> Money:
+    def calculate_toll(self, is_festival=False, effect_value=1.0) -> Money:
         toll = self._base_price * (0.2 + 0.2 * self._level)
         if is_festival:
             toll *= 2
@@ -81,32 +91,55 @@ class PropertySpace(BoardSpace):
 
     def on_land(self, player: Player) -> LandResult:
         if self._owner is None:
-            #self.buy_land(player)
-            def handle_choice(choice: str):
-                if choice == "BUILD":
-                    self.buy_land(player)
-                return None
-
+            # 주인이 없는 땅: 별장 - 호텔까지 구매 가능
             return LandResult(
-                f"{self.get_name()}에 별장을 건설할 수 있습니다.\n건설하시겠습니까?",
-                ["BUILD", "PASS"],
-                handle_choice
+                f"{self.get_name()}은(는) 비어있는 땅입니다.\n어떤 건물을 건설하시겠습니까?",
+                ["별장", "빌딩", "호텔", "PASS"],
+                lambda choice: self.handle_build_choice(choice, player),
+                player=player,
+                property=self
             )
         elif self._owner == player:
-            #self.upgrade_building(player)
-            def handle_choice(choice: str):
-                if choice == "UPGRADE":
-                    self.upgrade_building(player)
-                return None
+            # 자신의 소유지: 현재 구매되어있는 곳에서 호텔까지 구매 가능
+            level = self._building.get_level()
 
-            return LandResult(
-                f"{self.get_name()}은 당신의 소유지입니다.\n업그레이드 하시겠습니까?",
-                ["UPGRADE", "PASS"],
-                handle_choice
-            )
+            if level == 3:  # 호텔까지 구매되어 있는 상태라면 랜드마크까지 구매 가능
+                return LandResult(
+                    f"{self.get_name()}에 랜드마크를 건설하시겠습니까?\n"
+                    f"비용: {self._building.get_upgrade_cost().amount}만원",
+                    ["BUILD", "PASS"],
+                    lambda choice: self.handle_upgrade_choice(choice, player, BuildingType.LANDMARK),
+                    player=player,
+                    property=self
+                )
+            elif level < 3:  # 아직 호텔이 없다면
+                # 현재 레벨부터 호텔까지의 옵션 제공
+                options = []
+                if level < 1:
+                    options.append("별장")
+                if level < 2:
+                    options.append("빌딩")
+                if level < 3:
+                    options.append("호텔")
+                options.append("PASS")
+
+                return LandResult(
+                    f"{self.get_name()}에 어떤 건물을 건설하시겠습니까?",
+                    options,
+                    lambda choice: self.handle_building_selection(choice, player),
+                    player=player,
+                    property=self
+                )
+            elif self._building.is_maxed():
+                return LandResult(
+                    f"{self._name}은 이미 랜드마크까지 건설된 상태입니다!",
+                    ["OK"],
+                    lambda _: None,
+                    player=player,
+                    property=self
+                )
         else:
-            #self.pay_toll(player)
-            #self.offer_acquisition(player)
+            # 다른 플레이어 소유지: 통행료 지불 및 인수 여부 묻기
             toll = self._building.calculate_toll(self._is_festival, self._attack_effect_value)
 
             def handle_toll_payment(choice: str):
@@ -115,31 +148,160 @@ class PropertySpace(BoardSpace):
                     self._owner.receive(toll)
                     print(f"{player.get_name()}님이 {self.get_name()}의 통행료 {toll}를 지불했습니다.")
 
-                    def handle_acquire(choice2: str):
-                        if choice2 == "ACQUIRE":
-                            self.purchase_from_owner(player)
-                        else:
-                            print("인수를 포기했습니다.")
-                        return None
+                    # 랜드마크가 건설되어있다면 통행료만 지불하고 인수는 할 수 없음
+                    if self._building.get_level() == 4:
+                        return LandResult(
+                            f"{self.get_name()}에 랜드마크가 건설되어 있어 인수할 수 없습니다.",
+                            ["OK"],
+                            lambda _: None,
+                            player=player,
+                            property=self
+                        )
+                    else:
+                        def handle_acquire(choice2: str):
+                            if choice2 == "ACQUIRE":
+                                self.purchase_from_owner(player)
+                            else:
+                                print("인수를 포기했습니다.")
+                            return None
 
-                    return LandResult(
-                        f"{self.get_name()}을(를) 인수하시겠습니까?\n금액: {self._building.get_acquisition_cost().amount}만원",
-                        ["ACQUIRE", "DECLINE"],
-                        handle_acquire
-                    )
+                        return LandResult(
+                            f"{self.get_name()}을(를) 인수하시겠습니까?\n금액: {self._building.get_acquisition_cost().amount}만원",
+                            ["ACQUIRE", "DECLINE"],
+                            handle_acquire,
+                            player=player,
+                            property=self
+                        )
                 else:
                     print(f"{player.get_name()}님이 통행료를 낼 수 없습니다.")
                     return LandResult(
                         f"{player.get_name()}님의 잔액이 부족하여 통행료를 낼 수 없습니다.\n(추가 파산처리 필요)",
                         ["OK"],
-                        lambda choice: None
+                        lambda choice: None,
+                        player=player,
+                        property=self
                     )
 
             return LandResult(
                 f"{self.get_name()}은(는) {self._owner.get_name()}의 소유입니다.\n통행료 {toll.amount}만원을 지불합니다.",
                 ["OK"],
-                handle_toll_payment
+                handle_toll_payment,
+                player=player,
+                property=self
             )
+
+    def handle_build_choice(self, choice: str, player: Player):
+        if choice == "별장":
+            cost = self._building.get_price()
+            building_type = BuildingType.VILLA
+            level = 1
+        elif choice == "빌딩":
+            cost = self._building.get_price() * 1.5
+            building_type = BuildingType.BUILDING
+            level = 2
+        elif choice == "호텔":
+            cost = self._building.get_price() * 2
+            building_type = BuildingType.HOTEL
+            level = 3
+        elif choice == "PASS":
+            return None
+        else:
+            return None
+
+        if player.get_cash().amount >= cost.amount:
+            player.spend(cost)
+            self._owner = player  # 땅 주인 설정
+            self._building._level = level  # 건물 레벨 설정
+
+            building_name = "별장"
+            if building_type == BuildingType.BUILDING:
+                building_name = "빌딩"
+            elif building_type == BuildingType.HOTEL:
+                building_name = "호텔"
+
+            return LandResult(
+                f"{self.get_name()}에 {building_name}을 건설했습니다!",
+                ["OK"],
+                lambda _: None,
+                player=player,
+                property=self
+            )
+        else:
+            return LandResult(
+                f"건설 비용이 부족합니다. 필요 비용: {cost.amount}만원",
+                ["OK"],
+                lambda _: None,
+                player=player,
+                property=self
+            )
+
+    def handle_building_selection(self, choice: str, player: Player):
+        if choice == "별장":
+            cost = self._building.get_price()
+            building_type = BuildingType.VILLA
+            level = 1
+        elif choice == "빌딩":
+            cost = self._building.get_price() * 1.5
+            building_type = BuildingType.BUILDING
+            level = 2
+        elif choice == "호텔":
+            cost = self._building.get_price() * 2
+            building_type = BuildingType.HOTEL
+            level = 3
+        elif choice == "PASS":
+            return None
+        else:
+            return None
+
+        if player.get_cash().amount >= cost.amount:
+            player.spend(cost)
+            self._building._level = level  # 건물 레벨 직접 설정
+
+            building_name = "별장"
+            if building_type == BuildingType.BUILDING:
+                building_name = "빌딩"
+            elif building_type == BuildingType.HOTEL:
+                building_name = "호텔"
+
+            return LandResult(
+                f"{self.get_name()}에 {building_name}을 건설했습니다!",
+                ["OK"],
+                lambda _: None,
+                player=player,
+                property=self
+            )
+        else:
+            return LandResult(
+                f"건설 비용이 부족합니다. 필요 비용: {cost.amount}만원",
+                ["OK"],
+                lambda _: None,
+                player=player,
+                property=self
+            )
+
+    def handle_upgrade_choice(self, choice: str, player: Player, building_type: BuildingType):
+        if choice == "BUILD":
+            cost = self._building.get_upgrade_cost()
+            if player.get_cash().amount >= cost.amount:
+                player.spend(cost)
+                self._building.upgrade()  # 랜드마크로 업그레이드
+
+                return LandResult(
+                    f"{self.get_name()}에 랜드마크를 건설했습니다!",
+                    ["OK"],
+                    lambda _: None,
+                    player=player,
+                    property=self
+                )
+            else:
+                return LandResult(
+                    f"건설 비용이 부족합니다. 필요 비용: {cost.amount}만원",
+                    ["OK"],
+                    lambda _: None,
+                    player=player,
+                    property=self
+                )
+        return None
 
     def buy_land(self, player: Player):
         price = self._building.get_price()
@@ -159,10 +321,7 @@ class PropertySpace(BoardSpace):
         elif level == 2:
             self._try_upgrade(player, cost, "호텔")
         elif level == 3:
-            if self._building.can_build_landmark():
-                self._try_upgrade(player, cost, "랜드마크")
-            else:
-                print("조건을 만족하지 않아 랜드마크를 건설할 수 없습니다.")
+            self._try_upgrade(player, cost, "랜드마크")
         elif self._building.is_maxed():
             print(f"{self._name}은 이미 랜드마크까지 건설된 상태입니다!")
 
