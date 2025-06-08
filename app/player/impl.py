@@ -1,7 +1,6 @@
-from typing import Tuple
-
-from app.chance_card.abstract import ChanceCard
+from typing import Tuple, Optional
 from app.money.impl import Money
+from app.chance_card.abstract import ChanceCard
 
 
 class Player:
@@ -14,6 +13,8 @@ class Player:
     _color: Tuple[int, int, int]
     _card: ChanceCard = None
     _world_travel_ticket = False
+    _position: int = 0
+    _lap_count: int = 0  # 보드를 돈 횟수 추적
 
     # 미리 정의된 플레이어 색상들
     PLAYER_COLORS = [
@@ -28,6 +29,8 @@ class Player:
         self._name = name
         self._color = self.PLAYER_COLORS[idx % len(self.PLAYER_COLORS)]
         self._cash = Money(1000)
+        self._position = 0
+        self._lap_count = 0
 
     def __str__(self) -> str:
         color_names = {
@@ -79,8 +82,39 @@ class Player:
     def get_color(self) -> Tuple[int, int, int]:
         return self._color
 
-    def get_card(self) -> ChanceCard:
+    def get_card(self) -> Optional[ChanceCard]:
         return self._card
 
     def set_card(self, card: ChanceCard) -> None:
         self._card = card
+
+    def get_position(self) -> int:
+        return self._position
+
+    def set_position(self, position: int, board_size: int = 32) -> None:
+        # 시작점(0)을 지나면 랩 카운트 증가
+        if position < self._position and position < board_size:
+            self.increase_lap_count()
+        self._position = position
+
+    def move_position(self, steps: int, board_size: int = 32) -> None:
+        new_position = (self._position + steps) % board_size
+        # 시작점(0)을 지나면 랩 카운트 증가
+        if new_position < self._position:
+            self.increase_lap_count()
+        self._position = new_position
+
+    def get_lap_count(self) -> int:
+        return self._lap_count
+
+    def increase_lap_count(self) -> None:
+        self._lap_count += 1
+
+    def set_lap_count(self, count: int) -> None:
+        self._lap_count = count
+
+    def has_world_travel_ticket(self) -> bool:
+        return self._world_travel_ticket
+
+    def set_world_travel_ticket(self, has_ticket: bool) -> None:
+        self._world_travel_ticket = has_ticket

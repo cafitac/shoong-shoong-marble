@@ -90,20 +90,34 @@ class PropertySpace(BoardSpace):
         self._is_festival = False
 
     def on_land(self, player: Player) -> LandResult:
+        # 플레이어의 랩 수에 따라 건설 가능한 건물 옵션 결정
+        lap_count = player.get_lap_count()
+        available_buildings = []
+
+        if lap_count >= 0:  # 1바퀴째 (시작 포함)
+            available_buildings.append("별장")
+        if lap_count >= 1:  # 2바퀴째 (시작점 한번 이상 통과)
+            available_buildings.append("빌딩")
+        if lap_count >= 2:  # 3바퀴째
+            available_buildings.append("호텔")
+        can_build_landmark = lap_count >= 3  # 4바퀴째부터 랜드마크 가능
+
         if self._owner is None:
-            # 주인이 없는 땅: 별장 - 호텔까지 구매 가능
+            # 주인이 없는 땅: 랩 수에 따라 건설 가능한 옵션 제공
+            options = available_buildings + ["PASS"]
+
             return LandResult(
                 f"{self.get_name()}은(는) 비어있는 땅입니다.\n어떤 건물을 건설하시겠습니까?",
-                ["별장", "빌딩", "호텔", "PASS"],
+                options,
                 lambda choice: self.handle_build_choice(choice, player),
                 player=player,
                 property=self
             )
         elif self._owner == player:
-            # 자신의 소유지: 현재 구매되어있는 곳에서 호텔까지 구매 가능
+            # 자신의 소유지: 현재 구매되어있는 곳에서 랩 수에 따라 업그레이드 가능
             level = self._building.get_level()
 
-            if level == 3:  # 호텔까지 구매되어 있는 상태라면 랜드마크까지 구매 가능
+            if level == 3 and can_build_landmark:  # 호텔까지 구매되어 있고 4바퀴 이상 돌았으면 랜드마크까지 구매 가능
                 return LandResult(
                     f"{self.get_name()}에 랜드마크를 건설하시겠습니까?\n"
                     f"비용: {self._building.get_upgrade_cost().amount}만원",
@@ -113,20 +127,38 @@ class PropertySpace(BoardSpace):
                     property=self
                 )
             elif level < 3:  # 아직 호텔이 없다면
-                # 현재 레벨부터 호텔까지의 옵션 제공
+                # 현재 레벨부터 랩 수에 맞는 옵션 제공
                 options = []
-                if level < 1:
-                    options.append("별장")
-                if level < 2:
-                    options.append("빌딩")
-                if level < 3:
-                    options.append("호텔")
-                options.append("PASS")
+                for building in available_buildings:
+                    if (building == "별장" and level < 1) or \
+                            (building == "빌딩" and level < 2) or \
+                            (building == "호텔" and level < 3):
+                        options.append(building)
 
+                if not options:
+                    return LandResult(
+                        f"현재 {self.get_name()}에 더 높은 건물을 지을 수 없습니다.\n"
+                        f"더 많은 바퀴를 돌아야 업그레이드가 가능합니다.",
+                        ["OK"],
+                        lambda _: None,
+                        player=player,
+                        property=self
+                    )
+
+                options.append("PASS")
                 return LandResult(
                     f"{self.get_name()}에 어떤 건물을 건설하시겠습니까?",
                     options,
                     lambda choice: self.handle_building_selection(choice, player),
+                    player=player,
+                    property=self
+                )
+            elif level == 3 and not can_build_landmark:
+                return LandResult(
+                    f"{self.get_name()}에 랜드마크를 건설하려면 보드를 4바퀴 이상 돌아야 합니다.\n"
+                    f"현재 {lap_count + 1}바퀴째 진행 중입니다.",
+                    ["OK"],
+                    lambda _: None,
                     player=player,
                     property=self
                 )
@@ -139,7 +171,7 @@ class PropertySpace(BoardSpace):
                     property=self
                 )
         else:
-            # 다른 플레이어 소유지: 통행료 지불 및 인수 여부 묻기
+            # 다른 플레이어 소유지: 통행료 지불 및 인수 여부 묻기 (기존 코드와 동일)
             toll = self._building.calculate_toll(self._is_festival, self._attack_effect_value)
 
             def handle_toll_payment(choice: str):
@@ -191,15 +223,33 @@ class PropertySpace(BoardSpace):
             )
 
     def handle_build_choice(self, choice: str, player: Player):
+        lap_count = player.get_lap_count()
+
         if choice == "별장":
             cost = self._building.get_price()
             building_type = BuildingType.VILLA
             level = 1
         elif choice == "빌딩":
+            if lap_count < 1:  # 2바퀴 이상 돌아야 빌딩 건설 가능
+                return LandResult(
+                    f"빌딩을 건설하려면 보드를 2바퀴 이상 돌아야 합니다.\n현재 {lap_count + 1}바퀴째 진행 중입니다.",
+                    ["OK"],
+                    lambda _: None,
+                    player=player,
+                    property=self
+                )
             cost = self._building.get_price() * 1.5
             building_type = BuildingType.BUILDING
             level = 2
         elif choice == "호텔":
+            if lap_count < 2:  # 3바퀴 이상 돌아야 호텔 건설 가능
+                return LandResult(
+                    f"호텔을 건설하려면 보드를 3바퀴 이상 돌아야 합니다.\n현재 {lap_count + 1}바퀴째 진행 중입니다.",
+                    ["OK"],
+                    lambda _: None,
+                    player=player,
+                    property=self
+                )
             cost = self._building.get_price() * 2
             building_type = BuildingType.HOTEL
             level = 3
@@ -208,6 +258,7 @@ class PropertySpace(BoardSpace):
         else:
             return None
 
+        # 이하 코드는 동일
         if player.get_cash().amount >= cost.amount:
             player.spend(cost)
             self._owner = player  # 땅 주인 설정
@@ -236,15 +287,33 @@ class PropertySpace(BoardSpace):
             )
 
     def handle_building_selection(self, choice: str, player: Player):
+        lap_count = player.get_lap_count()
+
         if choice == "별장":
             cost = self._building.get_price()
             building_type = BuildingType.VILLA
             level = 1
         elif choice == "빌딩":
+            if lap_count < 1:  # 2바퀴 이상 돌아야 빌딩 건설 가능
+                return LandResult(
+                    f"빌딩을 건설하려면 보드를 2바퀴 이상 돌아야 합니다.\n현재 {lap_count + 1}바퀴째 진행 중입니다.",
+                    ["OK"],
+                    lambda _: None,
+                    player=player,
+                    property=self
+                )
             cost = self._building.get_price() * 1.5
             building_type = BuildingType.BUILDING
             level = 2
         elif choice == "호텔":
+            if lap_count < 2:  # 3바퀴 이상 돌아야 호텔 건설 가능
+                return LandResult(
+                    f"호텔을 건설하려면 보드를 3바퀴 이상 돌아야 합니다.\n현재 {lap_count + 1}바퀴째 진행 중입니다.",
+                    ["OK"],
+                    lambda _: None,
+                    player=player,
+                    property=self
+                )
             cost = self._building.get_price() * 2
             building_type = BuildingType.HOTEL
             level = 3
@@ -253,6 +322,7 @@ class PropertySpace(BoardSpace):
         else:
             return None
 
+        # 이하 코드는 동일
         if player.get_cash().amount >= cost.amount:
             player.spend(cost)
             self._building._level = level  # 건물 레벨 직접 설정
@@ -281,6 +351,17 @@ class PropertySpace(BoardSpace):
 
     def handle_upgrade_choice(self, choice: str, player: Player, building_type: BuildingType):
         if choice == "BUILD":
+            lap_count = player.get_lap_count()
+            if lap_count < 3 and building_type == BuildingType.LANDMARK:
+                return LandResult(
+                    f"랜드마크를 건설하려면 보드를 4바퀴 이상 돌아야 합니다.\n"
+                    f"현재 {lap_count + 1}바퀴째 진행 중입니다.",
+                    ["OK"],
+                    lambda _: None,
+                    player=player,
+                    property=self
+                )
+
             cost = self._building.get_upgrade_cost()
             if player.get_cash().amount >= cost.amount:
                 player.spend(cost)

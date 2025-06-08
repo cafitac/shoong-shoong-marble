@@ -172,6 +172,7 @@ class GameUI:
 
                 # 한 칸 이동
                 new_position = (old_position + 1) % len(game.get_board().get_spaces())
+
                 position_manager.update_player_position(current_player, new_position)
 
                 self.current_step += 1
@@ -417,7 +418,7 @@ class GameUI:
             # 현재 플레이어 표시
             current_player = game.get_current_player()
             if current_player:
-                player_turn_text = f"현재 차례: {current_player.get_name()}"
+                player_turn_text = f"현재 차례: {current_player.get_name()} (랩 카운트: {current_player.get_lap_count()})"
                 player_turn_label = self.fonts["main"].render(player_turn_text, True, COLOR_WHITE)
                 player_turn_rect = player_turn_label.get_rect(center=(current_w / 2, (current_h / 2) - 50))
                 self.screen.blit(player_turn_label, player_turn_rect)
