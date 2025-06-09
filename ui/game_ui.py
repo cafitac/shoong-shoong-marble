@@ -4,6 +4,7 @@ import time
 import pygame
 
 from app.board_space.land_result import LandResult
+from app.board_space.property.impl import BuildingType, PropertySpace
 from config.ui_config import UIConfig
 from ui.constants import *
 from ui.board_renderer import BoardRenderer
@@ -171,6 +172,7 @@ class GameUI:
 
                 # 한 칸 이동
                 new_position = (old_position + 1) % len(game.get_board().get_spaces())
+
                 position_manager.update_player_position(current_player, new_position)
 
                 self.current_step += 1
@@ -255,17 +257,35 @@ class GameUI:
             if result.callback:
                 next_result = result.callback(choice)
                 if isinstance(next_result, LandResult):
-                    self.show_modal_result(next_result, on_complete)  # 재귀로 넘겨줌
+                    self.show_modal_result(next_result, on_complete)
                 else:
+                    # 모달 닫고 블록 업데이트
                     self.modal_active = False
+
+                    # result에 property가 있고, 그 property에 owner가 있으면 해당 블록을 업데이트
+                    if result.property and result.property.get_owner():
+                        position = result.property.get_seq()
+                        self.board_renderer.update_block_by_seq(position)
+
+                    # on_complete_seq가 있으면 해당 블록도 업데이트
                     if result.on_complete_seq is not None:
                         self.board_renderer.update_block_by_seq(result.on_complete_seq)
+
                     if on_complete:
                         on_complete()
             else:
+                # 모달 닫고 블록 업데이트
                 self.modal_active = False
+
+                # result에 property가 있고, 그 property에 owner가 있으면 해당 블록을 업데이트
+                if result.property and result.property.get_owner():
+                    position = result.property.get_seq()
+                    self.board_renderer.update_block_by_seq(position)
+
+                # on_complete_seq가 있으면 해당 블록도 업데이트
                 if result.on_complete_seq is not None:
                     self.board_renderer.update_block_by_seq(result.on_complete_seq)
+
                 if on_complete:
                     on_complete()
 
@@ -398,7 +418,7 @@ class GameUI:
             # 현재 플레이어 표시
             current_player = game.get_current_player()
             if current_player:
-                player_turn_text = f"현재 차례: {current_player.get_name()}"
+                player_turn_text = f"현재 차례: {current_player.get_name()} (랩 카운트: {current_player.get_lap_count()})"
                 player_turn_label = self.fonts["main"].render(player_turn_text, True, COLOR_WHITE)
                 player_turn_rect = player_turn_label.get_rect(center=(current_w / 2, (current_h / 2) - 50))
                 self.screen.blit(player_turn_label, player_turn_rect)

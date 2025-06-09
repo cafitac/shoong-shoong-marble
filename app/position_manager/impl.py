@@ -1,4 +1,3 @@
-# 이 파일은 플레이어 위치 관리를 담당하는 PositionManager 클래스를 구현합니다.
 from app.board.impl import Board
 from app.board_space.abstract import BoardSpace
 from app.player.impl import Player
@@ -66,6 +65,13 @@ class PositionManager:
         board_size = self._get_board_size()
         print(f"보드 크기: {board_size}")
         new_position = (old_position + steps) % board_size
+
+        # Player 객체의 내부 위치도 업데이트 (랩 카운트 처리를 위해)
+        if new_position < old_position:
+            player.increase_lap_count()
+            print(f"{player.get_name()}의 랩 카운트가 증가했습니다. 현재: {player.get_lap_count()}")
+
+        player.set_position(new_position, board_size)
         self._positions[player] = new_position
 
         print(f"새 위치: {new_position}")
@@ -110,6 +116,14 @@ class PositionManager:
             position = position % board_size
             print(f"위치 범위 조정: {position}")
 
+        # 시작점을 지나는지 확인 (0번 위치가 시작점인 경우)
+        if position < old_position:
+            player.increase_lap_count()
+            print(f"{player.get_name()}의 랩 카운트가 증가했습니다. 현재: {player.get_lap_count()}")
+
+        # Player 객체의 내부 위치도 업데이트
+        player.set_position(position, board_size)
+
         # 새 위치 설정
         self._positions[player] = position
 
@@ -143,5 +157,6 @@ class PositionManager:
     def update_player_position(self, player: Player, position: int) -> None:
         """
         UI 렌더링용 플레이어 위치 업데이트 함수
+        플레이어 객체의 내부 위치와 랩 카운트도 동기화합니다.
         """
         self.set_position(player, position)
