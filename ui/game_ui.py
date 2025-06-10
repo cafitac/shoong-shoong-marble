@@ -270,7 +270,8 @@ class GameUI:
 
                     # on_complete_seq가 있으면 해당 블록도 업데이트
                     if result.on_complete_seq is not None:
-                        self.board_renderer.update_block_by_seq(result.on_complete_seq)
+                        for seq in result.on_complete_seq:
+                            self.board_renderer.update_block_by_seq(seq)
 
                     if on_complete:
                         on_complete()
@@ -285,7 +286,8 @@ class GameUI:
 
                 # on_complete_seq가 있으면 해당 블록도 업데이트
                 if result.on_complete_seq is not None:
-                    self.board_renderer.update_block_by_seq(result.on_complete_seq)
+                    for seq in result.on_complete_seq:
+                        self.board_renderer.update_block_by_seq(seq)
 
                 if on_complete:
                     on_complete()

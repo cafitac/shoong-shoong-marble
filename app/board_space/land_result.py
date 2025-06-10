@@ -7,7 +7,10 @@ class LandResult:
         self.actions = actions
         self.callback = callback
         self.is_prompt = is_prompt
-        self.on_complete_seq = on_complete_seq
+        if isinstance(on_complete_seq, int):
+            self.on_complete_seq = [on_complete_seq]
+        else:
+            self.on_complete_seq = on_complete_seq
         self.player = player
         self.property = property
 

@@ -418,13 +418,13 @@ class PropertySpace(BoardSpace):
         else:
             print(f"{building_name} 건설 비용이 부족합니다.")
 
-    def pay_toll(self, player: Player, seq: int = None):
+    def pay_toll(self, player: Player, sell_spaces: list = None):
         toll = self._building.calculate_toll(self._is_festival, self._attack_effect_value)
         if player.get_cash().amount >= toll.amount:
             player.spend(toll)
             self._owner.receive(toll)
             print(f"{player}님이 {self._name}의 통행료 {toll}를 지불했습니다!")
-            if not seq:
+            if not sell_spaces:
                 return LandResult(
                     f"{player}님이 {self._name}의 통행료 {toll}를 지불했습니다!",
                     ["OK"],
@@ -435,11 +435,11 @@ class PropertySpace(BoardSpace):
                     f"{player}님이 {self._name}의 통행료 {toll}를 지불했습니다!",
                     ["OK"],
                     lambda _: None,
-                    on_complete_seq=seq
+                    on_complete_seq=sell_spaces
                 )
         else:
             print(f"{player}님이 통행료를 지불할 금액이 부족합니다. (파산처리 등 추가 가능)")
-            return self._attempt_pay_with_sell(player, toll)
+            return self._attempt_pay_with_sell(player, toll, sell_spaces)
 
     def offer_acquisition(self, player: Player):
         acquisition_cost = self._building.get_acquisition_cost()
@@ -474,7 +474,9 @@ class PropertySpace(BoardSpace):
         print("매각")
         return price
 
-    def _attempt_pay_with_sell(self, player: Player, toll: Money):
+    def _attempt_pay_with_sell(self, player: Player, toll: Money, sell_spaces=None):
+        if sell_spaces is None:
+            sell_spaces = list()
         sellable = player.get_spaces()
         sellable_msg = ""
         for idx, prop in enumerate(sellable):
@@ -487,7 +489,8 @@ class PropertySpace(BoardSpace):
             return LandResult(
                 f"{player.get_name()}님은 통행료({toll.amount}원)를 낼 수 없어 파산했습니다.",
                 ["OK"],
-                lambda _: None
+                lambda _: None,
+                on_complete_seq=sell_spaces
             )
 
         def handle_property_sell(input_text: str, sellable_list: list):
@@ -502,13 +505,14 @@ class PropertySpace(BoardSpace):
                 if not (isinstance(target_city, PropertySpace) or isinstance(target_city, TouristSpotSpace)):
                     message = f"도시가 아닙니다.\n다른 도시 번호를 입력하세요"
             if target_city:
+                sell_spaces.append(target_city.get_seq())
                 gain = target_city.sale_land()
                 player.get_cash().amount += gain.amount
                 print(f"{target_city.get_name()}을 매각하고 {gain}을 확보했습니다.")
                 return LandResult(
                     message=f"{target_city.get_name()}을 매각하고 {gain}을 확보했습니다.",
                     actions=["OK"],
-                    callback=lambda _: self.pay_toll(player, target_city.get_seq()),
+                    callback=lambda _: self.pay_toll(player, sell_spaces),
                 )
             else:
                 print("선택한 건물을 찾을 수 없습니다.")
