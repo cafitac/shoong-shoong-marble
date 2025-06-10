@@ -7,6 +7,7 @@ from app.board_space.olympic.impl import OlympicSpace
 from app.board_space.tax_office.impl import TaxOfficeSpace
 from app.chance_card.deck import ChanceCardDeck
 from app.dice.dices import Dices
+from app.game.leaderboard import LeaderBoard
 from app.player.impl import Player
 from app.position_manager.impl import PositionManager
 from app.turn_manager.impl import TurnManager
@@ -22,6 +23,7 @@ class Game:
     _position_manager: PositionManager
     _dices: Dices
     _card_deck: ChanceCardDeck
+    _leaderboard: LeaderBoard
 
     def __init__(self, players: list[Player]):
         self._board = self._create_board_from_file()
@@ -30,6 +32,7 @@ class Game:
         self._position_manager = PositionManager(self._board, self._players)
         self._dices = Dices(count=2)
         self._card_deck = ChanceCardDeck()
+        self._leaderboard = LeaderBoard(players)
         for space in self._board.get_spaces():
             if isinstance(space, ChanceSpace):
                 space.set_deck(self)

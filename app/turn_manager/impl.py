@@ -33,6 +33,8 @@ class TurnManager:
             if current_player.is_turn_blocked():
                 print(f"{current_player.get_name()}의 턴이 스킵됩니다. 남은 차단 턴: {current_player._turns_to_wait}")
                 return self.next()
+        elif current_player._is_bankrupt:
+            return self.next()
 
         return self.get_current_player()
 
