@@ -135,6 +135,8 @@ class BoardRenderer:
         # 각 위치별 플레이어 목록 생성
         players_at_position = {}
         for player in self.position_manager._players:
+            if player._is_bankrupt:
+                continue
             position = self.position_manager.get_position(player)
             if position not in players_at_position:
                 players_at_position[position] = []

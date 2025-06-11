@@ -201,6 +201,7 @@ class GameUI:
 
                 # 공격 카드 턴 감소
                 game.get_turn_manager().reduce_duration(game.get_board().get_spaces())
+
                 # 턴 매니저를 통해 다음 플레이어로 턴 전환
                 game.get_turn_manager().next()
 
@@ -269,7 +270,8 @@ class GameUI:
 
                     # on_complete_seq가 있으면 해당 블록도 업데이트
                     if result.on_complete_seq is not None:
-                        self.board_renderer.update_block_by_seq(result.on_complete_seq)
+                        for seq in result.on_complete_seq:
+                            self.board_renderer.update_block_by_seq(seq)
 
                     if on_complete:
                         on_complete()
@@ -284,7 +286,8 @@ class GameUI:
 
                 # on_complete_seq가 있으면 해당 블록도 업데이트
                 if result.on_complete_seq is not None:
-                    self.board_renderer.update_block_by_seq(result.on_complete_seq)
+                    for seq in result.on_complete_seq:
+                        self.board_renderer.update_block_by_seq(seq)
 
                 if on_complete:
                     on_complete()
@@ -396,6 +399,8 @@ class GameUI:
             for i, player in enumerate(game.get_players()):
                 rank = i + 1
                 if rank in player_positions:
+                    if player._is_bankrupt:
+                        continue
                     self.player_panel.draw(self.screen, player, rank, player_positions[rank])
 
             # 주사위 버튼 그리기

@@ -30,7 +30,9 @@ class Player:
         self._color = self.PLAYER_COLORS[idx % len(self.PLAYER_COLORS)]
         self._cash = Money(1000)
         self._position = 0
-        self._lap_count = 0
+        self._lap_count = 0 # 보드를 돈 횟수 추적
+        self._spaces: list = []
+        self._is_bankrupt = False # 파산 여부
 
     def __str__(self) -> str:
         color_names = {
@@ -118,3 +120,20 @@ class Player:
 
     def set_world_travel_ticket(self, has_ticket: bool) -> None:
         self._world_travel_ticket = has_ticket
+
+    def add_space(self, space):
+        self._spaces.append(space)
+
+    def remove_space(self, space):
+        if space in self._spaces:
+            self._spaces.remove(space)
+
+    def get_spaces(self) -> list:
+        return self._spaces
+
+    def set_bankrupt(self):
+        self._is_bankrupt = True
+        for space in self._spaces:
+            space._owner = None
+            space._building._level = 0
+        self._spaces = []
